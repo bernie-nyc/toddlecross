@@ -1,0 +1,152 @@
+{% extends 'toddlecross/base.html' %}
+
+{% block title %}Dashboard - Toddlecross{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .welcome-banner {
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%);
+        border: 1px solid var(--glass-border);
+    }
+
+    .welcome-title {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-text {
+        color: var(--text-muted);
+        font-size: 1rem;
+        max-width: 600px;
+        line-height: 1.5;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-content {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--accent);
+        font-family: 'Outfit', sans-serif;
+        margin: 0.5rem 0;
+    }
+
+    .dashboard-card {
+        padding: 1.75rem;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        background-color: var(--surface-hover);
+    }
+
+    .action-btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 1.25rem;
+    }
+
+    /* Python script trigger mock */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        margin-bottom: 0.75rem;
+    }
+
+    .admin-card {
+        border-color: rgba(6, 182, 212, 0.3);
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(22, 30, 49, 0.7) 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-banner glass-card animate-fade-in">
+    <h2 class="welcome-title">Hello, {{ user.first_name|default:user.username }}!</h2>
+    <p class="welcome-text">Welcome to your Toddlecross instance. This application is configured to run Python-driven workflows, data integrations, and processing scripts securely.</p>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Active Instance / Status Card -->
+    <div class="glass-card dashboard-card">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+            System Status
+        </h3>
+        <div class="status-badge">Instance Running</div>
+        <div class="card-content">
+            <p>Database Connection: <strong>SQLite (Active)</strong></p>
+            <p>SSO Provider: <strong>Google</strong></p>
+            <p style="margin-top: 0.5rem;">The local environment is successfully reading settings from <code>.env</code>.</p>
+        </div>
+    </div>
+
+    <!-- Python Processing Card -->
+    <div class="glass-card dashboard-card">
+        <h3 class="card-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg>
+            Python Engine
+        </h3>
+        <div class="stat-number">Active</div>
+        <div class="card-content">
+            <p>Ready to run jobs, pipelines, and integrations. You can edit Python files in the <code>toddlecross/</code> directory to define your processing tasks.</p>
+            <div class="action-btn-group">
+                <button class="btn btn-primary" onclick="alert('Python mock trigger executed successfully!')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Run Data Job</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Administration Card (only shown for admins / staff) -->
+    {% if user.is_staff %}
+        <div class="glass-card dashboard-card admin-card">
+            <h3 class="card-title" style="color: var(--accent);">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                Administration
+            </h3>
+            <div class="card-content">
+                <p>As an Instance Admin, you can add or manage additional user accounts, set up groups, and manage credentials.</p>
+                <div class="action-btn-group">
+                    <a href="/admin/auth/user/" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background-color: var(--accent);">Manage Accounts</a>
+                    <a href="/admin/" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Full Admin site</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

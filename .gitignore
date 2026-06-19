@@ -1,0 +1,27 @@
+# Keep local environment variables and secrets private
+.env
+.env.local
+secrets/
+*.db
+*.sqlite3
+
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.eggs/
+
+# IDEs and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
