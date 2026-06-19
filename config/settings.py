@@ -157,11 +157,13 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'  # Set to mandatory or optional for producti
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
-            'key': ''
-        },
+        'APPS': [
+            {
+                'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
+                'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
+                'key': ''
+            }
+        ],
         'SCOPE': [
             'profile',
             'email',
@@ -171,3 +173,31 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'allauth': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
+# LTI 1.3 Configurations
+LTI_KEYS_DIR = BASE_DIR / 'config' / 'lti_keys'
+LTI_PRIVATE_KEY_FILE = LTI_KEYS_DIR / 'private.key'
+LTI_PUBLIC_KEY_FILE = LTI_KEYS_DIR / 'public.key'
+
+TODDLE_LTI_ISSUER = os.getenv('TODDLE_LTI_ISSUER_URL', '')
+TODDLE_LTI_CLIENT_ID = os.getenv('TODDLE_LTI_CLIENT_ID', '')
+TODDLE_LTI_LOGIN_URL = os.getenv('TODDLE_LTI_LOGIN_URL', '')
+TODDLE_LTI_KEYSET_URL = os.getenv('TODDLE_LTI_KEYSET_URL', '')
+TODDLE_LTI_TOKEN_URL = os.getenv('TODDLE_LTI_TOKEN_URL', '')
+TODDLE_LTI_DEPLOYMENT_ID = os.getenv('TODDLE_LTI_DEPLOYMENT_ID', '')
