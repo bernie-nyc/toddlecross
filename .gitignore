@@ -4,6 +4,7 @@
 secrets/
 *.db
 *.sqlite3
+config/lti_keys/
 
 # Python specific
 __pycache__/
