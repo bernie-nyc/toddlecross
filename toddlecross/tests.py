@@ -110,3 +110,86 @@ class AccessGatingTests(TestCase):
         response = self.client.get(reverse('account_login'))
         self.assertEqual(response.status_code, 200)
 
+
+class UserManagementTests(TestCase):
+    def setUp(self):
+        # We create a regular test user that is NOT a staff member.
+        self.regular_user = User.objects.create_user(
+            username='regular_user@example.com',
+            email='regular_user@example.com',
+            password='testpassword'
+        )
+        # We create a staff user who is an administrator.
+        self.staff_user = User.objects.create_user(
+            username='staff_user@example.com',
+            email='staff_user@example.com',
+            password='testpassword',
+            is_staff=True
+        )
+
+    def test_regular_user_dashboard_does_not_list_users(self):
+        # We log in as the regular user.
+        self.client.force_login(self.regular_user)
+        # We fetch the dashboard page.
+        response = self.client.get(reverse('toddlecross:home'))
+        # The page should load successfully (status code 200).
+        self.assertEqual(response.status_code, 200)
+        # We check that the context does NOT contain the list of users.
+        self.assertNotIn('users', response.context)
+
+    def test_staff_user_dashboard_lists_users(self):
+        # We log in as the staff administrator.
+        self.client.force_login(self.staff_user)
+        # We fetch the dashboard page.
+        response = self.client.get(reverse('toddlecross:home'))
+        # The page should load successfully (status code 200).
+        self.assertEqual(response.status_code, 200)
+        # The context must contain our list of users.
+        self.assertIn('users', response.context)
+        # The list must contain the users we registered in setUp.
+        user_list = response.context['users']
+        self.assertTrue(any(u.email == 'regular_user@example.com' for u in user_list))
+
+    def test_regular_user_cannot_invite_users(self):
+        # We log in as the regular user.
+        self.client.force_login(self.regular_user)
+        # We attempt to POST to the invite URL.
+        response = self.client.post(reverse('toddlecross:invite_user'), {
+            'email': 'new_invitee@example.com'
+        })
+        # The system must stop them and return a 403 Forbidden status code.
+        self.assertEqual(response.status_code, 403)
+        # We check that the user was NOT created in the database.
+        self.assertFalse(User.objects.filter(email='new_invitee@example.com').exists())
+
+    def test_staff_user_can_invite_users(self):
+        # We log in as the staff administrator.
+        self.client.force_login(self.staff_user)
+        # We post a new email address to the invite URL.
+        response = self.client.post(reverse('toddlecross:invite_user'), {
+            'email': 'new_invitee@example.com',
+            'is_staff': 'off'
+        })
+        # The page should redirect us back to the homepage (status code 302).
+        self.assertEqual(response.status_code, 302)
+        # The new user must now exist in our database.
+        self.assertTrue(User.objects.filter(email='new_invitee@example.com').exists())
+        invited_user = User.objects.get(email='new_invitee@example.com')
+        # They should NOT be a staff member.
+        self.assertFalse(invited_user.is_staff)
+        # Their password must be unusable since they will use SSO.
+        self.assertFalse(invited_user.has_usable_password())
+
+    def test_invite_duplicate_user_fails(self):
+        # We log in as the staff administrator.
+        self.client.force_login(self.staff_user)
+        # We attempt to invite an email that already exists (regular_user).
+        response = self.client.post(reverse('toddlecross:invite_user'), {
+            'email': 'regular_user@example.com'
+        })
+        # It should redirect back to the home page.
+        self.assertEqual(response.status_code, 302)
+        # Only 1 user with that email should exist.
+        self.assertEqual(User.objects.filter(email='regular_user@example.com').count(), 1)
+
+
