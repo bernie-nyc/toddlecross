@@ -89,3 +89,24 @@ class LtiViewsTests(TestCase):
         self.assertEqual(response.status_code, 403)
         # Check that user is NOT logged in
         self.assertNotIn('_auth_user_id', self.client.session)
+
+
+class AccessGatingTests(TestCase):
+    def test_anonymous_access_home_allowed(self):
+        """Unauthenticated user should be allowed to view the home/login page."""
+        response = self.client.get(reverse('toddlecross:home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'toddlecross/login.html')
+
+    def test_anonymous_access_protected_redirects(self):
+        """Unauthenticated user accessing admin or other views should redirect to LOGIN_URL (/)."""
+        response = self.client.get('/admin/')
+        self.assertEqual(response.status_code, 302)
+        # Verify it redirects to the login path /
+        self.assertTrue(response.url.startswith('/'))
+
+    def test_anonymous_access_allauth_login_allowed(self):
+        """Unauthenticated user should be allowed to view allauth login/signup pages."""
+        response = self.client.get(reverse('account_login'))
+        self.assertEqual(response.status_code, 200)
+

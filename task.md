@@ -1,9 +1,7 @@
-# Task List - LTI 1.3 Integration
+# Task List - Batch 1: SSO & Access Gating
 
-- [x] Update dependencies: Add `PyLTI1p3>=1.18.0` and `cryptography` to `requirements.txt` and install them
-- [x] Configure `.gitignore`: Add `config/lti_keys/`
-- [x] Implement key generation script: `toddlecross/generate_lti_keys.py` and run it to create keys
-- [x] Update Django settings: Configure LTI variables and key paths in `config/settings.py`
-- [x] Implement views: Write login, launch, and keyset views in `toddlecross/lti_views.py`
-- [x] Add routing: Connect views in `toddlecross/urls.py`
-- [x] Verify: Write unit tests in `toddlecross/tests.py` and run them to ensure everything is correct
+- [x] Update Django settings: Add `LoginRequiredMiddleware` and set `LOGIN_URL = '/'` in `config/settings.py`
+- [x] Exempt public LTI views: Decorate views in `toddlecross/lti_views.py` with `@login_not_required`
+- [x] Exempt root view: Decorate `home_view` in `toddlecross/views.py` with `@login_not_required`
+- [x] Implement custom logout template: Create `toddlecross/templates/account/logout.html`
+- [x] Verify: Add test cases to verify gating redirection, and run all unit tests
