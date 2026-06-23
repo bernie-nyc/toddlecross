@@ -22,23 +22,23 @@ A secure, Python-driven application with a web frontend gated by Google SSO, fea
 
 ---
 
-### 🟨 Milestone 2: Google SSO Authentication & Access Gating
+### 🟩 Milestone 2: Google SSO Authentication & Access Gating
 *Goal: Ensure the web interface is fully protected by Google SSO.*
 - [x] Integrate `django-allauth` into Django settings and URLs
 - [x] Configure settings-based Google credentials via `SOCIALACCOUNT_PROVIDERS`
 - [x] Setup `LOGGING` for authentication troubleshooting
-- [ ] Configure local `.env` with active Google OAuth Client credentials
-- [ ] Implement middleware or decorator to gate all frontend views, redirecting unauthenticated users to the SSO sign-in page
-- [ ] Design and refine custom frontend SSO login and logout pages using glassmorphic UI styles
+- [x] Configure local `.env` with active Google OAuth Client credentials
+- [x] Implement middleware or decorator to gate all frontend views, redirecting unauthenticated users to the SSO sign-in page
+- [x] Design and refine custom frontend SSO login and logout pages using glassmorphic UI styles
 
 ---
 
-### ⬜ Milestone 3: Instance Administration & User Provisioning
+### 🟩 Milestone 3: Instance Administration & User Provisioning
 *Goal: Enable the instance admin to add and manage additional user accounts.*
 - [x] Update Site settings to match local hosting domain and port (`127.0.0.1:8080`)
-- [ ] Verify creation of primary instance admin (superuser)
-- [ ] Expose user management actions in the Django Admin console (`/admin/auth/user/`)
-- [ ] Create a frontend admin interface/card that allows the logged-in admin to quickly view and invite/add user accounts
+- [x] Verify creation of primary instance admin (superuser)
+- [x] Expose user management actions in the Django Admin console (`/admin/auth/user/`)
+- [x] Create a frontend admin interface/card that allows the logged-in admin to quickly view and invite/add user accounts
 
 ---
 
