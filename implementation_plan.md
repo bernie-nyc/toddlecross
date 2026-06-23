@@ -1,6 +1,6 @@
-# Implementation Plan - Batch 2: Admin Dashboard and User Management
+# Implementation Plan - Batch 3: Core Integration and Data Clients
 
-This plan outlines the changes to establish admin access, superuser validation, and frontend user management.
+This plan outlines the changes to build the API clients and data processing pipeline for Toddle and Veracross.
 
 ## User Review Required
 
@@ -10,38 +10,19 @@ This plan outlines the changes to establish admin access, superuser validation, 
 
 ## Proposed Changes
 
-### Configuration
+### Core Python Engine
 
-#### [MODIFY] [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py)
-- [ ] Add configurations for default superuser credentials from environment variables.
-- [ ] Add settings for social account admin shortcuts.
+#### [NEW] [toddle_client.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/toddle_client.py)
+- [ ] Develop the Toddle API client class to interact with Toddle's GraphQL and REST endpoints.
+- [ ] Load credentials from settings and handle request authorization headers.
 
----
+#### [NEW] [veracross_client.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/veracross_client.py)
+- [ ] Develop the Veracross API client class supporting OAuth2 authentication flow and token refresh.
+- [ ] Support requesting student and teacher datasets.
 
-### Management Commands
-
-#### [NEW] [ensure_superuser.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/ensure_superuser.py)
-- [ ] Implement a Django management command to check if a superuser exists and create one if not, using credentials loaded from the settings.
-
----
-
-### Views and Gating
-
-#### [MODIFY] [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py)
-- [ ] Update `home_view` to fetch all users and pass them to the template for staff/admin users.
-- [ ] Create `invite_user_view` to handle the POST request from the user invitation form, creating a new user in the database.
-
-#### [MODIFY] [urls.py](file:///h:/My%20Drive/Toddlecross/toddlecross/urls.py)
-- [ ] Add URL routing path `/invite-user/` mapping to `invite_user_view`.
-
----
-
-### Templates
-
-#### [MODIFY] [dashboard.html](file:///h:/My%20Drive/Toddlecross/toddlecross/templates/toddlecross/dashboard.html)
-- [ ] Replace the mock admin card with a fully interactive user management console.
-- [ ] Add a list of active users showing username, email, and staff status.
-- [ ] Add an inline user creation/invitation form with email and staff toggle.
+#### [NEW] [sync_pipeline.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/sync_pipeline.py)
+- [ ] Create a pipeline class that maps student and teacher data structures between Veracross and Toddle formats.
+- [ ] Implement diff generation logic to identify additions, changes, and deletions, pushing them to Toddle.
 
 ---
 
@@ -49,10 +30,6 @@ This plan outlines the changes to establish admin access, superuser validation, 
 
 ### Automated Tests
 - [ ] Add unit tests in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to check:
-  - Only staff users can view the user list and access the invite URL.
-  - Submitting the invite form creates a new user in the database.
-  - Duplicate email invites are handled gracefully with an error.
-
-### Manual Verification
-- [ ] Run the ensure_superuser command and check that the superuser is created.
-- [ ] Navigate to the dashboard as a staff user and verify that user lists and invitations work.
+  - Mocked Toddle client GraphQL query requests and authorization headers.
+  - Mocked Veracross client OAuth2 authentication token request and REST queries.
+  - Sync pipeline mapping logic and diff calculations.

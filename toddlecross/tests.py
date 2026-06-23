@@ -1,8 +1,12 @@
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 # pyrefly: ignore [missing-import]
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
+
+from toddlecross.engine.toddle_client import ToddleClient
+from toddlecross.engine.veracross_client import VeracrossClient
+from toddlecross.engine.sync_pipeline import SyncPipeline
 
 @override_settings(
     TODDLE_LTI_ISSUER='https://ap-southeast-1-production-apis.toddleapp.com/394761314477637866',
@@ -191,5 +195,131 @@ class UserManagementTests(TestCase):
         self.assertEqual(response.status_code, 302)
         # Only 1 user with that email should exist.
         self.assertEqual(User.objects.filter(email='regular_user@example.com').count(), 1)
+
+
+class ToddleClientTests(TestCase):
+    @patch('requests.post')
+    def test_execute_graphql_sends_correct_headers_and_payload(self, mock_post):
+        # We mock the post request response to return a simple JSON dictionary.
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'data': {'students': []}}
+        mock_post.return_value = mock_response
+
+        # We create our client object.
+        client = ToddleClient()
+        # We call execute_graphql.
+        result = client.execute_graphql('query { test }', {'var': 123})
+
+        # We verify it returned the correct parsed data.
+        self.assertEqual(result, {'data': {'students': []}})
+        # We check that requests.post was called with correct arguments.
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        # The first argument is the URL.
+        self.assertTrue(args[0].endswith('/graphql'))
+        # The json payload should contain our query and variables.
+        self.assertEqual(kwargs['json'], {'query': 'query { test }', 'variables': {'var': 123}})
+        # The headers should have our Content-Type and Authorization.
+        self.assertEqual(kwargs['headers']['Content-Type'], 'application/json')
+        self.assertIn('Authorization', kwargs['headers'])
+
+
+class VeracrossClientTests(TestCase):
+    @patch('requests.post')
+    @patch('requests.get')
+    def test_veracross_client_auth_and_get(self, mock_get, mock_post):
+        # We mock the authentication response.
+        mock_auth_response = MagicMock()
+        mock_auth_response.status_code = 200
+        mock_auth_response.json.return_value = {'access_token': 'fake_token', 'expires_in': 3600}
+        mock_post.return_value = mock_auth_response
+
+        # We mock the GET data response.
+        mock_get_response = MagicMock()
+        mock_get_response.status_code = 200
+        mock_get_response.json.return_value = [{'id': 1, 'first_name': 'John'}]
+        mock_get.return_value = mock_get_response
+
+        # We configure our client.
+        client = VeracrossClient()
+        # We fetch the students.
+        students = client.get_students()
+
+        # Check results and calls.
+        self.assertEqual(students, [{'id': 1, 'first_name': 'John'}])
+        mock_post.assert_called_once()
+        mock_get.assert_called_once()
+        
+        # Check that authorization header was used on GET request.
+        _, get_kwargs = mock_get.call_args
+        self.assertEqual(get_kwargs['headers']['Authorization'], 'Bearer fake_token')
+
+
+class SyncPipelineTests(TestCase):
+    def setUp(self):
+        self.pipeline = SyncPipeline()
+
+    def test_map_student_translates_fields(self):
+        raw_student = {
+            'student_id': 1001,
+            'first_name': 'Alice',
+            'last_name': 'Smith',
+            'email': 'ALICE@example.com ',
+            'grade_level': 'Grade 9'
+        }
+        mapped = self.pipeline.map_student(raw_student)
+        self.assertEqual(mapped, {
+            'sis_id': '1001',
+            'first_name': 'Alice',
+            'last_name': 'Smith',
+            'email': 'alice@example.com',
+            'grade': 'Grade 9'
+        })
+
+    def test_calculate_diff_finds_correct_ops(self):
+        existing = [
+            {'email': 'keep@example.com', 'first_name': 'Keep', 'grade': 'G1'},
+            {'email': 'update@example.com', 'first_name': 'OldName', 'grade': 'G1'},
+            {'email': 'delete@example.com', 'first_name': 'Delete', 'grade': 'G2'}
+        ]
+        incoming = [
+            {'email': 'keep@example.com', 'first_name': 'Keep', 'grade': 'G1'},
+            {'email': 'update@example.com', 'first_name': 'NewName', 'grade': 'G1'},
+            {'email': 'create@example.com', 'first_name': 'Create', 'grade': 'G3'}
+        ]
+        diff = self.pipeline.calculate_diff(existing, incoming)
+        
+        # We check the creations.
+        self.assertEqual(len(diff['to_create']), 1)
+        self.assertEqual(diff['to_create'][0]['email'], 'create@example.com')
+        
+        # We check the updates.
+        self.assertEqual(len(diff['to_update']), 1)
+        self.assertEqual(diff['to_update'][0]['first_name'], 'NewName')
+        
+        # We check the deletions.
+        self.assertEqual(len(diff['to_delete']), 1)
+        self.assertEqual(diff['to_delete'][0]['email'], 'delete@example.com')
+
+    @patch.object(VeracrossClient, 'get_students')
+    @patch.object(ToddleClient, 'execute_graphql')
+    def test_sync_students_workflow(self, mock_graphql, mock_veracross_students):
+        # We mock Veracross returning one new student.
+        mock_veracross_students.return_value = [
+            {'student_id': 999, 'first_name': 'Bob', 'last_name': 'Jones', 'email': 'bob@example.com', 'grade_level': 'G5'}
+        ]
+        
+        # We mock Toddle graphql query returning empty list first, then successful mutation responses.
+        mock_graphql.side_effect = [
+            {'data': {'students': []}}, # GetExistingStudents response
+            {'data': {'createStudent': {'sis_id': '999'}}} # CreateStudent response
+        ]
+        
+        results = self.pipeline.sync_students()
+        self.assertEqual(results['created_count'], 1)
+        self.assertEqual(results['updated_count'], 0)
+        self.assertEqual(results['deleted_count'], 0)
+
 
 

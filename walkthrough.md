@@ -1,6 +1,6 @@
-# Walkthrough - SSO, Access Gating, and User Management
+# Walkthrough - SSO, Access Gating, User Management, and Sync Engine
 
-This walkthrough details the changes made to the project workspace on the dev branch to implement access gating (Batch 1) and user management dashboards (Batch 2).
+This walkthrough details the changes made to the project workspace on the dev branch to implement access gating, user administration, and the backend sync engine clients.
 
 ## Changes Made
 
@@ -31,23 +31,37 @@ This walkthrough details the changes made to the project workspace on the dev br
   - Account pre-registration form.
   - Interactive user table displaying registered emails, dates, and administrative roles.
 
+### 6. Toddle GraphQL and REST Client (Batch 3)
+- Created [toddle_client.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/toddle_client.py) to encapsulate GraphQL queries/mutations and REST GET/POST calls to Toddle.
+- Implemented token-based authentication via headers automatically using credentials configured in [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py).
+
+### 7. Veracross OAuth2 and REST Client (Batch 3)
+- Created [veracross_client.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/veracross_client.py) to connect to the Veracross school system.
+- Implemented token retrieval via `client_credentials` grant type and memory-cached token expiration tracking to avoid repeated authentication calls.
+- Provided specific endpoints to fetch student and teacher datasets.
+
+### 8. Data Sync Pipeline (Batch 3)
+- Created [sync_pipeline.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/sync_pipeline.py) which acts as the coordinator between Veracross and Toddle.
+- Implemented field-mapping schema rules for translating student and teacher structures.
+- Implemented diffing logic to separate incoming records into creation, update, and deletion batches, pushing updates to Toddle via GraphQL mutations.
+
 ---
 
 ## Verification Results
 
 ### Automated Tests
-We expanded the test suite in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to cover all new user invite logic, listing views, duplicate email guards, and role permissions.
+We expanded the test suite in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to verify client request structures, authorization headers, mapping translations, diff computations, and the full pipeline execution using mock responses.
 
-All 13 Django unit tests ran and passed successfully in the .venv environment:
+All 18 Django unit tests ran and passed successfully in the .venv environment:
 
 ```cmd
 Creating test database for alias 'default'...
-.............
+..................
 ----------------------------------------------------------------------
-Ran 13 tests in 4.669s
+Ran 18 tests in 4.757s
 
 OK
 Destroying test database for alias 'default'...
-Found 13 test(s).
+Found 18 test(s).
 System check identified no issues (0 silenced).
 ```
