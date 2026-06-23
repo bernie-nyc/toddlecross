@@ -1,8 +1,6 @@
-# Task List - Batch 2: Admin Dashboard and User Management
+# Task List - Batch 3: Core Integration and Data Clients
 
-- [x] Update Django settings: Configure superuser settings from environment variables in `config/settings.py`
-- [x] Create superuser script: Implement `ensure_superuser` command in `toddlecross/management/commands/ensure_superuser.py`
-- [x] Add URL routing: Add path `/invite-user/` in `toddlecross/urls.py`
-- [x] Implement invite views: Write `invite_user_view` and update `home_view` in `toddlecross/views.py`
-- [x] Update dashboard UI: Add the user list and invite form to `toddlecross/templates/toddlecross/dashboard.html`
-- [x] Verify: Write unit tests in `toddlecross/tests.py` and run them to ensure everything is correct
+- [x] Create Toddle client: Implement `toddlecross/engine/toddle_client.py`
+- [ ] Create Veracross client: Implement `toddlecross/engine/veracross_client.py`
+- [ ] Create Sync Pipeline: Implement mapping and diff logic in `toddlecross/engine/sync_pipeline.py`
+- [ ] Verify: Write unit tests in `toddlecross/tests.py` and run them to ensure everything is correct
