@@ -203,3 +203,14 @@ TODDLE_LTI_LOGIN_URL = os.getenv('TODDLE_LTI_LOGIN_URL', '')
 TODDLE_LTI_KEYSET_URL = os.getenv('TODDLE_LTI_KEYSET_URL', '')
 TODDLE_LTI_TOKEN_URL = os.getenv('TODDLE_LTI_TOKEN_URL', '')
 TODDLE_LTI_DEPLOYMENT_ID = os.getenv('TODDLE_LTI_DEPLOYMENT_ID', '')
+
+# These settings tell our website the default administrator credentials.
+# We read these values from a secret .env file.
+# If they are not found in the .env file, we fall back to safe default values.
+# The username is used to log in.
+SUPERUSER_USERNAME = os.getenv('SUPERUSER_USERNAME', 'admin')
+# The email address for the administrator.
+SUPERUSER_EMAIL = os.getenv('SUPERUSER_EMAIL', 'admin@example.com')
+# The password the administrator will use to log in.
+SUPERUSER_PASSWORD = os.getenv('SUPERUSER_PASSWORD', 'adminpassword')
+

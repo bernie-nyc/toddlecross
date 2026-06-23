@@ -132,21 +132,84 @@
 
     <!-- Account Administration Card (only shown for admins / staff) -->
     {% if user.is_staff %}
-        <div class="glass-card dashboard-card admin-card">
-            <h3 class="card-title" style="color: var(--accent);">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        </div> <!-- End dashboard-grid -->
+        
+        <!-- Large full-width Administration Section -->
+        <div class="glass-card admin-section animate-fade-in" style="margin-top: 2rem; padding: 2.5rem; border-color: rgba(6, 182, 212, 0.3); background: linear-gradient(135deg, rgba(6, 182, 212, 0.03) 0%, rgba(22, 30, 49, 0.7) 100%); border-radius: 16px;">
+            <h3 class="card-title" style="color: var(--accent); margin-bottom: 1.5rem; font-size: 1.5rem;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
-                Administration
+                Instance Administration
             </h3>
-            <div class="card-content">
-                <p>As an Instance Admin, you can add or manage additional user accounts, set up groups, and manage credentials.</p>
-                <div class="action-btn-group">
-                    <a href="/admin/auth/user/" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background-color: var(--accent);">Manage Accounts</a>
-                    <a href="/admin/" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Full Admin site</a>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                <!-- Column 1: Invite/Add New User -->
+                <div>
+                    <h4 style="font-family: 'Outfit', sans-serif; color: var(--text-main); margin-bottom: 1rem; font-size: 1.2rem;">Pre-Register New User</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5;">
+                        Invite new users by entering their email address. Since authentication is done via Google SSO and LTI, adding their email here allows them to log in.
+                    </p>
+                    
+                    <form method="post" action="{% url 'toddlecross:invite_user' %}">
+                        {% csrf_token %}
+                        <div style="margin-bottom: 1.25rem;">
+                            <label for="email" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500;">Email Address</label>
+                            <input type="email" id="email" name="email" required placeholder="user@example.com" 
+                                   style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: rgba(11, 15, 25, 0.6); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s;">
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+                            <input type="checkbox" id="is_staff" name="is_staff" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
+                            <label for="is_staff" style="font-size: 0.9rem; color: var(--text-main); cursor: pointer; user-select: none;">Grant Administrator Permissions (Staff)</label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="background-color: var(--accent); font-size: 0.9rem; padding: 0.65rem 1.25rem;">Create Account</button>
+                    </form>
+                </div>
+                
+                <!-- Column 2: Registered Accounts List -->
+                <div>
+                    <h4 style="font-family: 'Outfit', sans-serif; color: var(--text-main); margin-bottom: 1rem; font-size: 1.2rem;">Registered Accounts</h4>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background-color: rgba(11, 15, 25, 0.4);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-color); background-color: rgba(11, 15, 25, 0.6);">
+                                    <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Email / Username</th>
+                                    <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Role</th>
+                                    <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Date Added</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users %}
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background-color 0.2s;">
+                                        <td style="padding: 0.75rem 1rem; color: var(--text-main); word-break: break-all;">{{ u.email|default:u.username }}</td>
+                                        <td style="padding: 0.75rem 1rem;">
+                                            {% if u.is_staff %}
+                                                <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(6, 182, 212, 0.15); color: var(--accent);">Admin</span>
+                                            {% else %}
+                                                <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(255, 255, 255, 0.08); color: var(--text-muted);">User</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 0.75rem 1rem; color: var(--text-muted); font-size: 0.8rem;">{{ u.date_joined|date:"Y-m-d" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No other users found.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+            
+            <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="/admin/auth/user/" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Advanced User Editor</a>
+                <a href="/admin/" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Django Database Admin</a>
+            </div>
         </div>
+    {% else %}
+        </div> <!-- End dashboard-grid -->
     {% endif %}
-</div>
 {% endblock %}
