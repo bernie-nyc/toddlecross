@@ -56,24 +56,24 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #14: Toddle GraphQL & REST API Client
 - **Description**: Develop a robust client class for the Toddleapp API using credentials from `.env`.
 - **Tasks**:
-  - [ ] Create Python wrapper to interact with `/graphql` endpoint.
-  - [ ] Support querying endpoints and schemas securely.
+  - [x] Create Python wrapper to interact with `/graphql` endpoint.
+  - [x] Support querying endpoints and schemas securely.
 - **Files**:
   - `toddlecross/engine/toddle_client.py` [NEW]
 
 ### 🔹 Issue #15: Veracross OAuth2 & API Client
 - **Description**: Develop a client class for the Veracross API, handling OAuth token refresh and REST queries.
 - **Tasks**:
-  - [ ] Implement OAuth2 token flow.
-  - [ ] Support requesting student/teacher datasets from `https://api.veracross.com/`.
+  - [x] Implement OAuth2 token flow.
+  - [x] Support requesting student/teacher datasets from `https://api.veracross.com/`.
 - **Files**:
   - `toddlecross/engine/veracross_client.py` [NEW]
 
 ### 🔹 Issue #16: Sync & Mapping Workflow Runner
 - **Description**: Implement the pipeline mapping student/staff data from Veracross to Toddle format.
 - **Tasks**:
-  - [ ] Map field schemas between platforms.
-  - [ ] Implement logic to identify diffs and push updates.
+  - [x] Map field schemas between platforms.
+  - [x] Implement logic to identify diffs and push updates.
 - **Files**:
   - `toddlecross/engine/sync_pipeline.py` [NEW]
 
