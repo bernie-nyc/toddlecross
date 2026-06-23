@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.contrib.auth.decorators import login_not_required
 
 from pylti1p3.tool_config import ToolConfDict
 from pylti1p3.contrib.django import DjangoOIDCLogin, DjangoMessageLaunch, DjangoCacheDataStorage
@@ -37,6 +38,7 @@ def get_tool_conf():
 def get_launch_data_storage():
     return DjangoCacheDataStorage()
 
+@login_not_required
 def lti_login(request):
     tool_conf = get_tool_conf()
     launch_data_storage = get_launch_data_storage()
@@ -53,6 +55,7 @@ def lti_login(request):
     return oidc_login.enable_check_cookies().redirect(target_link_uri)
 
 @csrf_exempt
+@login_not_required
 def lti_launch(request):
     tool_conf = get_tool_conf()
     launch_data_storage = get_launch_data_storage()
@@ -95,6 +98,7 @@ def lti_launch(request):
     # Redirect to the dashboard
     return HttpResponseRedirect('/')
 
+@login_not_required
 def lti_keyset(request):
     tool_conf = get_tool_conf()
     jwks = tool_conf.get_jwks()
