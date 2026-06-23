@@ -34,16 +34,16 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #12: Superuser Verification & Settings
 - **Description**: Establish and document admin access, wiring user listings in the Django admin console.
 - **Tasks**:
-  - [ ] Setup superuser validation scripts or instructions.
-  - [ ] Configure `allauth` admin shortcuts.
+  - [x] Setup superuser validation scripts or instructions.
+  - [x] Configure `allauth` admin shortcuts.
 - **Files**:
   - `config/settings.py` [MODIFY]
 
 ### 🔹 Issue #13: Frontend User Invite & Administration Dashboard
 - **Description**: Add user management cards/views on the frontend dashboard visible only to staff/admin users.
 - **Tasks**:
-  - [ ] Create `/admin/users/` view (or embed in dashboard) displaying active users.
-  - [ ] Add an "Invite/Add User" form to register new users (emails) into the database so they can subsequently login via Google SSO or LTI.
+  - [x] Create `/admin/users/` view (or embed in dashboard) displaying active users.
+  - [x] Add an "Invite/Add User" form to register new users (emails) into the database so they can subsequently login via Google SSO or LTI.
 - **Files**:
   - `toddlecross/views.py` [MODIFY]
   - `toddlecross/templates/toddlecross/dashboard.html` [MODIFY]
