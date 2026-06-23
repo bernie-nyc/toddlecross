@@ -214,3 +214,16 @@ SUPERUSER_EMAIL = os.getenv('SUPERUSER_EMAIL', 'admin@example.com')
 # The password the administrator will use to log in.
 SUPERUSER_PASSWORD = os.getenv('SUPERUSER_PASSWORD', 'adminpassword')
 
+# Toddleapp core API configuration settings.
+# We read these values from the environment variables to keep our API keys secure.
+TODDLE_API_BASE_URL = os.getenv('TODDLE_API_BASE_URL', 'https://ap-southeast-1-production-apis.toddleapp.com/')
+TODDLE_API_KEY = os.getenv('TODDLE_API_KEY', '')
+
+# Veracross OAuth2 and API settings.
+# We load the base endpoint, OAuth authentication URL, client ID, and secret.
+VERACROSS_API_BASE_URL = os.getenv('VERACROSS_API_BASE_URL', '')
+VERACROSS_TOKEN_URL = os.getenv('VERACROSS_TOKEN_URL', '')
+VERACROSS_CLIENT_ID = os.getenv('VERACROSS_CLIENT_ID', '')
+VERACROSS_CLIENT_SECRET = os.getenv('VERACROSS_CLIENT_SECRET', '')
+
+
