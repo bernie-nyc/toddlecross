@@ -85,15 +85,15 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #17: Run History & Job Logging Schema
 - **Description**: Store historical records of data sync runs, status, and diagnostic logs in the database.
 - **Tasks**:
-  - [ ] Create a `SyncJob` model tracking status (Pending, Running, Success, Failed) and log records.
+  - [x] Create a `SyncJob` model tracking status (Pending, Running, Success, Failed) and log records.
 - **Files**:
   - `toddlecross/models.py` [MODIFY]
 
 ### 🔹 Issue #18: Async Trigger & Log Streaming Interface
 - **Description**: Allow admins to run sync tasks asynchronously from the dashboard page and view live log feeds.
 - **Tasks**:
-  - [ ] Implement background worker or thread execution for the sync pipeline.
-  - [ ] Expose an endpoint returning real-time status and logs of the active/latest run.
+  - [x] Implement background worker or thread execution for the sync pipeline.
+  - [x] Expose an endpoint returning real-time status and logs of the active/latest run.
 - **Files**:
   - `toddlecross/views.py` [MODIFY]
   - `toddlecross/templates/toddlecross/dashboard.html` [MODIFY]
