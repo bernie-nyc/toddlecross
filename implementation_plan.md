@@ -1,6 +1,6 @@
-# Implementation Plan - Batch 3: Core Integration and Data Clients
+# Implementation Plan - Batch 4: Asynchronous Execution and Monitoring
 
-This plan outlines the changes to build the API clients and data processing pipeline for Toddle and Veracross.
+This plan outlines the changes to implement the Run History database schema, background worker threads, and a live log streaming interface for the sync pipeline.
 
 ## User Review Required
 
@@ -10,19 +10,32 @@ This plan outlines the changes to build the API clients and data processing pipe
 
 ## Proposed Changes
 
-### Core Python Engine
+### Models and Database
 
-#### [NEW] [toddle_client.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/toddle_client.py)
-- [ ] Develop the Toddle API client class to interact with Toddle's GraphQL and REST endpoints.
-- [ ] Load credentials from settings and handle request authorization headers.
+#### [MODIFY] [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py)
+- [ ] Create `SyncJob` model to store status (Pending, Running, Success, Failed), run timestamps, log text, and success counters.
 
-#### [NEW] [veracross_client.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/veracross_client.py)
-- [ ] Develop the Veracross API client class supporting OAuth2 authentication flow and token refresh.
-- [ ] Support requesting student and teacher datasets.
+---
 
-#### [NEW] [sync_pipeline.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/sync_pipeline.py)
-- [ ] Create a pipeline class that maps student and teacher data structures between Veracross and Toddle formats.
-- [ ] Implement diff generation logic to identify additions, changes, and deletions, pushing them to Toddle.
+### Views and Gating
+
+#### [MODIFY] [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py)
+- [ ] Implement `trigger_sync_view` to start a sync job in a background thread and return its job ID.
+- [ ] Implement `sync_status_view` to return the status, metrics, and logs of a specific sync job as JSON.
+- [ ] Update `home_view` to retrieve and context-pass the latest sync jobs to the dashboard.
+
+#### [MODIFY] [urls.py](file:///h:/My%20Drive/Toddlecross/toddlecross/urls.py)
+- [ ] Register path `/sync/trigger/` mapping to `trigger_sync_view`.
+- [ ] Register path `/sync/status/<int:job_id>/` mapping to `sync_status_view`.
+
+---
+
+### Templates and Dashboard
+
+#### [MODIFY] [dashboard.html](file:///h:/My%20Drive/Toddlecross/toddlecross/templates/toddlecross/dashboard.html)
+- [ ] Connect the "Run Data Job" button to make an AJAX POST request triggering the sync.
+- [ ] Add a live log viewer pane that polls `/sync/status/<job_id>/` to stream logs.
+- [ ] Add a run history table showing the last 10 sync jobs.
 
 ---
 
@@ -30,6 +43,6 @@ This plan outlines the changes to build the API clients and data processing pipe
 
 ### Automated Tests
 - [ ] Add unit tests in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to check:
-  - Mocked Toddle client GraphQL query requests and authorization headers.
-  - Mocked Veracross client OAuth2 authentication token request and REST queries.
-  - Sync pipeline mapping logic and diff calculations.
+  - Starting a sync job triggers a background thread and returns the job ID.
+  - The status view returns the correct JSON payload containing log text and run state.
+  - Running a successful or failed sync job correctly saves the outcome in the database.

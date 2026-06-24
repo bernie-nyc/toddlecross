@@ -3,13 +3,25 @@ from .veracross_client import VeracrossClient
 
 # This class runs the sync process. It reads data from Veracross,
 # maps it to the Toddle format, figures out what changed, and updates Toddle.
+# It can also accept a SyncJob database object to write logs in real time.
 class SyncPipeline:
     # This initializer creates the API clients we need for both websites.
-    def __init__(self):
+    # It optionally takes a sync_job parameter to write logs to the database.
+    def __init__(self, sync_job=None):
         # We create a client to talk to the Toddle app.
         self.toddle_client = ToddleClient()
         # We create a client to talk to the Veracross school system.
         self.veracross_client = VeracrossClient()
+        # We save the sync_job database object.
+        self.sync_job = sync_job
+
+    # This helper method writes a log message.
+    # If a database sync job is present, it saves it there. Otherwise, it prints it.
+    def log(self, message):
+        if self.sync_job:
+            self.sync_job.add_log(message)
+        else:
+            print(message)
 
     # This method takes a student dictionary from Veracross
     # and translates its keys to match what Toddle expects.
@@ -86,13 +98,19 @@ class SyncPipeline:
 
     # This method executes the full sync workflow for students.
     def sync_students(self):
+        self.log("Sync progress: Initializing student sync pipeline.")
+        
         # 1. Fetch student data from Veracross REST API.
+        self.log("Sync progress: Requesting student list from Veracross API.")
         veracross_raw = self.veracross_client.get_students()
+        self.log(f"Sync progress: Received {len(veracross_raw)} records from Veracross.")
         
         # 2. Map Veracross data to Toddle schema.
+        self.log("Sync progress: Mapping Veracross schemas to Toddle standard format.")
         mapped_incoming = [self.map_student(student) for student in veracross_raw]
 
         # 3. Fetch existing students from Toddle using a GraphQL query.
+        self.log("Sync progress: Querying existing students from Toddle GraphQL server.")
         query = """
         query GetExistingStudents {
             students {
@@ -108,12 +126,16 @@ class SyncPipeline:
             # We fetch existing student records from the Toddle server.
             toddle_response = self.toddle_client.execute_graphql(query)
             existing_students = toddle_response.get('data', {}).get('students', [])
-        except Exception:
+            self.log(f"Sync progress: Found {len(existing_students)} existing students on Toddle.")
+        except Exception as e:
             # Fall back to empty list if query fails or server is not initialized.
+            self.log(f"Sync warning: Failed to fetch existing students from Toddle: {e}")
             existing_students = []
 
         # 4. Calculate what records need to be added, changed, or deleted.
+        self.log("Sync progress: Comparing datasets to calculate differences.")
         diff = self.calculate_diff(existing_students, mapped_incoming)
+        self.log(f"Sync progress: Diffs computed. Create: {len(diff['to_create'])}, Update: {len(diff['to_update'])}, Delete: {len(diff['to_delete'])}.")
 
         # 5. Push changes to Toddle using GraphQL mutations.
         results = {
@@ -123,6 +145,8 @@ class SyncPipeline:
         }
 
         # Handle student creations.
+        if diff['to_create']:
+            self.log(f"Sync progress: Preprocessing {len(diff['to_create'])} student creations on Toddle.")
         create_mutation = """
         mutation CreateStudent($input: StudentInput!) {
             createStudent(input: $input) {
@@ -134,10 +158,12 @@ class SyncPipeline:
             try:
                 self.toddle_client.execute_graphql(create_mutation, {'input': student})
                 results['created_count'] += 1
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Sync error: Failed to create student {student.get('email')}: {e}")
 
         # Handle student updates.
+        if diff['to_update']:
+            self.log(f"Sync progress: Preprocessing {len(diff['to_update'])} student updates on Toddle.")
         update_mutation = """
         mutation UpdateStudent($input: StudentInput!) {
             updateStudent(input: $input) {
@@ -149,10 +175,12 @@ class SyncPipeline:
             try:
                 self.toddle_client.execute_graphql(update_mutation, {'input': student})
                 results['updated_count'] += 1
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Sync error: Failed to update student {student.get('email')}: {e}")
 
         # Handle student deletions.
+        if diff['to_delete']:
+            self.log(f"Sync progress: Preprocessing {len(diff['to_delete'])} student deletions on Toddle.")
         delete_mutation = """
         mutation DeleteStudent($email: String!) {
             deleteStudent(email: $email) {
@@ -164,7 +192,15 @@ class SyncPipeline:
             try:
                 self.toddle_client.execute_graphql(delete_mutation, {'email': student.get('email', '')})
                 results['deleted_count'] += 1
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Sync error: Failed to delete student {student.get('email')}: {e}")
 
+        # If a sync_job is present, we save the counts directly to the database object.
+        if self.sync_job:
+            self.sync_job.created_count = results['created_count']
+            self.sync_job.updated_count = results['updated_count']
+            self.sync_job.deleted_count = results['deleted_count']
+            self.sync_job.save()
+
+        self.log("Sync progress: Student sync completed successfully.")
         return results
