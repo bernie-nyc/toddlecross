@@ -1,8 +1,8 @@
-# Task List - Batch 2: Admin Dashboard and User Management
+# Task List - Batch 4: Asynchronous Execution and Monitoring
 
-- [x] Update Django settings: Configure superuser settings from environment variables in `config/settings.py`
-- [x] Create superuser script: Implement `ensure_superuser` command in `toddlecross/management/commands/ensure_superuser.py`
-- [x] Add URL routing: Add path `/invite-user/` in `toddlecross/urls.py`
-- [x] Implement invite views: Write `invite_user_view` and update `home_view` in `toddlecross/views.py`
-- [x] Update dashboard UI: Add the user list and invite form to `toddlecross/templates/toddlecross/dashboard.html`
+- [x] Create database model: Implement `SyncJob` in `toddlecross/models.py`
+- [x] Run database migration: Generate and run migrations to create the new table
+- [x] Add URL routing: Register status and trigger paths in `toddlecross/urls.py`
+- [x] Implement sync views: Write background thread execution and status endpoints in `toddlecross/views.py`
+- [x] Update dashboard UI: Integrate AJAX triggers and live logging in `toddlecross/templates/toddlecross/dashboard.html`
 - [x] Verify: Write unit tests in `toddlecross/tests.py` and run them to ensure everything is correct

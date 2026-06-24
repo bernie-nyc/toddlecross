@@ -1,6 +1,6 @@
-# Implementation Plan - Batch 2: Admin Dashboard and User Management
+# Implementation Plan - Batch 4: Asynchronous Execution and Monitoring
 
-This plan outlines the changes to establish admin access, superuser validation, and frontend user management.
+This plan outlines the changes to implement the Run History database schema, background worker threads, and a live log streaming interface for the sync pipeline.
 
 ## User Review Required
 
@@ -10,38 +10,32 @@ This plan outlines the changes to establish admin access, superuser validation, 
 
 ## Proposed Changes
 
-### Configuration
+### Models and Database
 
-#### [MODIFY] [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py)
-- [ ] Add configurations for default superuser credentials from environment variables.
-- [ ] Add settings for social account admin shortcuts.
-
----
-
-### Management Commands
-
-#### [NEW] [ensure_superuser.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/ensure_superuser.py)
-- [ ] Implement a Django management command to check if a superuser exists and create one if not, using credentials loaded from the settings.
+#### [MODIFY] [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py)
+- [ ] Create `SyncJob` model to store status (Pending, Running, Success, Failed), run timestamps, log text, and success counters.
 
 ---
 
 ### Views and Gating
 
 #### [MODIFY] [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py)
-- [ ] Update `home_view` to fetch all users and pass them to the template for staff/admin users.
-- [ ] Create `invite_user_view` to handle the POST request from the user invitation form, creating a new user in the database.
+- [ ] Implement `trigger_sync_view` to start a sync job in a background thread and return its job ID.
+- [ ] Implement `sync_status_view` to return the status, metrics, and logs of a specific sync job as JSON.
+- [ ] Update `home_view` to retrieve and context-pass the latest sync jobs to the dashboard.
 
 #### [MODIFY] [urls.py](file:///h:/My%20Drive/Toddlecross/toddlecross/urls.py)
-- [ ] Add URL routing path `/invite-user/` mapping to `invite_user_view`.
+- [ ] Register path `/sync/trigger/` mapping to `trigger_sync_view`.
+- [ ] Register path `/sync/status/<int:job_id>/` mapping to `sync_status_view`.
 
 ---
 
-### Templates
+### Templates and Dashboard
 
 #### [MODIFY] [dashboard.html](file:///h:/My%20Drive/Toddlecross/toddlecross/templates/toddlecross/dashboard.html)
-- [ ] Replace the mock admin card with a fully interactive user management console.
-- [ ] Add a list of active users showing username, email, and staff status.
-- [ ] Add an inline user creation/invitation form with email and staff toggle.
+- [ ] Connect the "Run Data Job" button to make an AJAX POST request triggering the sync.
+- [ ] Add a live log viewer pane that polls `/sync/status/<job_id>/` to stream logs.
+- [ ] Add a run history table showing the last 10 sync jobs.
 
 ---
 
@@ -49,10 +43,6 @@ This plan outlines the changes to establish admin access, superuser validation, 
 
 ### Automated Tests
 - [ ] Add unit tests in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to check:
-  - Only staff users can view the user list and access the invite URL.
-  - Submitting the invite form creates a new user in the database.
-  - Duplicate email invites are handled gracefully with an error.
-
-### Manual Verification
-- [ ] Run the ensure_superuser command and check that the superuser is created.
-- [ ] Navigate to the dashboard as a staff user and verify that user lists and invitations work.
+  - Starting a sync job triggers a background thread and returns the job ID.
+  - The status view returns the correct JSON payload containing log text and run state.
+  - Running a successful or failed sync job correctly saves the outcome in the database.

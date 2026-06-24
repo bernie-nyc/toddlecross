@@ -124,9 +124,15 @@
         <div class="stat-number">Active</div>
         <div class="card-content">
             <p>Ready to run jobs, pipelines, and integrations. You can edit Python files in the <code>toddlecross/</code> directory to define your processing tasks.</p>
-            <div class="action-btn-group">
-                <button class="btn btn-primary" onclick="alert('Python mock trigger executed successfully!')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Run Data Job</button>
-            </div>
+            {% if user.is_staff %}
+                <div class="action-btn-group">
+                    <button id="run-sync-btn" class="btn btn-primary" onclick="startDataSync()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Run Data Job</button>
+                </div>
+            {% else %}
+                <div class="action-btn-group">
+                    <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; opacity: 0.5;" disabled>Run Data Job</button>
+                </div>
+            {% endif %}
         </div>
     </div>
 
@@ -209,6 +215,164 @@
                 <a href="/admin/" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Django Database Admin</a>
             </div>
         </div>
+
+        <!-- Sync Console and History Section -->
+        <div id="console-section" class="glass-card" style="display: none; margin-top: 2rem; padding: 2.5rem; border-color: rgba(79, 70, 229, 0.3); background: linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, rgba(22, 30, 49, 0.7) 100%); border-radius: 16px;">
+            <h3 class="card-title" style="color: #818cf8; margin-bottom: 1.5rem; font-size: 1.5rem;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Sync Terminal Output
+            </h3>
+            <pre id="sync-log-console" style="width: 100%; height: 250px; background-color: #060913; border: 1px solid var(--border-color); border-radius: 10px; padding: 1.25rem; font-family: monospace; font-size: 0.9rem; color: #34d399; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;"></pre>
+        </div>
+
+        <div class="glass-card sync-history-section animate-fade-in" style="margin-top: 2rem; padding: 2.5rem; border-color: rgba(255, 255, 255, 0.08); background: var(--glass-bg); border-radius: 16px;">
+            <h3 class="card-title" style="color: var(--text-main); margin-bottom: 1.5rem; font-size: 1.5rem;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Execution Run History
+            </h3>
+            <div style="width: 100%; overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px; background-color: rgba(11, 15, 25, 0.4);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color); background-color: rgba(11, 15, 25, 0.6);">
+                            <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Run ID</th>
+                            <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Start Time</th>
+                            <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Status</th>
+                            <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Metrics (Add / Mod / Del)</th>
+                            <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in sync_jobs %}
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background-color 0.2s;">
+                                <td style="padding: 0.75rem 1rem; color: var(--text-main); font-weight: 600;">#{{ job.id }}</td>
+                                <td style="padding: 0.75rem 1rem; color: var(--text-muted);">{{ job.start_time|date:"Y-m-d H:i:s" }}</td>
+                                <td style="padding: 0.75rem 1rem;">
+                                    {% if job.status == 'Success' %}
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(16, 185, 129, 0.15); color: #34d399;">Success</span>
+                                    {% elif job.status == 'Running' %}
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(245, 158, 11, 0.15); color: #fbbf24;">Running</span>
+                                    {% elif job.status == 'Failed' %}
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(239, 68, 68, 0.15); color: #f87171;">Failed</span>
+                                    {% else %}
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(255, 255, 255, 0.08); color: var(--text-muted);">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 0.75rem 1rem; color: var(--text-main);">
+                                    <span style="color: #34d399; font-weight: 600;">+{{ job.created_count }}</span> / 
+                                    <span style="color: #fbbf24; font-weight: 600;">~{{ job.updated_count }}</span> / 
+                                    <span style="color: #f87171; font-weight: 600;">-{{ job.deleted_count }}</span>
+                                </td>
+                                <td style="padding: 0.75rem 1rem; text-align: right;">
+                                    <button class="btn btn-secondary" onclick="viewHistoricLogs({{ job.id }})" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 6px;">View Logs</button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No sync job history found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            let syncInterval = null;
+
+            function startDataSync() {
+                const btn = document.getElementById('run-sync-btn');
+                const logConsole = document.getElementById('sync-log-console');
+                const logSection = document.getElementById('console-section');
+                
+                btn.disabled = true;
+                btn.innerText = 'Running Sync...';
+                
+                logConsole.innerText = 'Initializing connection to server...\n';
+                logSection.style.display = 'block';
+                
+                fetch("{% url 'toddlecross:trigger_sync' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server returned an error.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const jobId = data.job_id;
+                        logConsole.innerText += `Sync Job #${jobId} triggered successfully. Polling status...\n`;
+                        
+                        syncInterval = setInterval(() => {
+                            pollSyncStatus(jobId);
+                        }, 1000);
+                    } else {
+                        throw new Error(data.error || 'Failed to initialize job.');
+                    }
+                })
+                .catch(error => {
+                    logConsole.innerText += `\nError: ${error.message}\n`;
+                    btn.disabled = false;
+                    btn.innerText = 'Run Data Job';
+                });
+            }
+
+            function pollSyncStatus(jobId) {
+                const url = `/sync/status/${jobId}/`;
+                const btn = document.getElementById('run-sync-btn');
+                const logConsole = document.getElementById('sync-log-console');
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    logConsole.innerText = data.logs || '';
+                    logConsole.scrollTop = logConsole.scrollHeight;
+                    
+                    if (data.status === 'Success' || data.status === 'Failed') {
+                        clearInterval(syncInterval);
+                        btn.disabled = false;
+                        btn.innerText = 'Run Data Job';
+                        
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    clearInterval(syncInterval);
+                    logConsole.innerText += `\nConnection lost: ${error.message}\n`;
+                    btn.disabled = false;
+                    btn.innerText = 'Run Data Job';
+                });
+            }
+
+            function viewHistoricLogs(jobId) {
+                const logSection = document.getElementById('console-section');
+                const logConsole = document.getElementById('sync-log-console');
+                
+                logSection.style.display = 'block';
+                logConsole.innerText = `Fetching logs for Job #${jobId}...\n`;
+                
+                fetch(`/sync/status/${jobId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    logConsole.innerText = data.logs || 'No logs recorded.';
+                    logConsole.scrollTop = logConsole.scrollHeight;
+                })
+                .catch(error => {
+                    logConsole.innerText = `Error: ${error.message}`;
+                });
+            }
+        </script>
     {% else %}
         </div> <!-- End dashboard-grid -->
     {% endif %}

@@ -56,24 +56,24 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #14: Toddle GraphQL & REST API Client
 - **Description**: Develop a robust client class for the Toddleapp API using credentials from `.env`.
 - **Tasks**:
-  - [ ] Create Python wrapper to interact with `/graphql` endpoint.
-  - [ ] Support querying endpoints and schemas securely.
+  - [x] Create Python wrapper to interact with `/graphql` endpoint.
+  - [x] Support querying endpoints and schemas securely.
 - **Files**:
   - `toddlecross/engine/toddle_client.py` [NEW]
 
 ### 🔹 Issue #15: Veracross OAuth2 & API Client
 - **Description**: Develop a client class for the Veracross API, handling OAuth token refresh and REST queries.
 - **Tasks**:
-  - [ ] Implement OAuth2 token flow.
-  - [ ] Support requesting student/teacher datasets from `https://api.veracross.com/`.
+  - [x] Implement OAuth2 token flow.
+  - [x] Support requesting student/teacher datasets from `https://api.veracross.com/`.
 - **Files**:
   - `toddlecross/engine/veracross_client.py` [NEW]
 
 ### 🔹 Issue #16: Sync & Mapping Workflow Runner
 - **Description**: Implement the pipeline mapping student/staff data from Veracross to Toddle format.
 - **Tasks**:
-  - [ ] Map field schemas between platforms.
-  - [ ] Implement logic to identify diffs and push updates.
+  - [x] Map field schemas between platforms.
+  - [x] Implement logic to identify diffs and push updates.
 - **Files**:
   - `toddlecross/engine/sync_pipeline.py` [NEW]
 
@@ -85,15 +85,15 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #17: Run History & Job Logging Schema
 - **Description**: Store historical records of data sync runs, status, and diagnostic logs in the database.
 - **Tasks**:
-  - [ ] Create a `SyncJob` model tracking status (Pending, Running, Success, Failed) and log records.
+  - [x] Create a `SyncJob` model tracking status (Pending, Running, Success, Failed) and log records.
 - **Files**:
   - `toddlecross/models.py` [MODIFY]
 
 ### 🔹 Issue #18: Async Trigger & Log Streaming Interface
 - **Description**: Allow admins to run sync tasks asynchronously from the dashboard page and view live log feeds.
 - **Tasks**:
-  - [ ] Implement background worker or thread execution for the sync pipeline.
-  - [ ] Expose an endpoint returning real-time status and logs of the active/latest run.
+  - [x] Implement background worker or thread execution for the sync pipeline.
+  - [x] Expose an endpoint returning real-time status and logs of the active/latest run.
 - **Files**:
   - `toddlecross/views.py` [MODIFY]
   - `toddlecross/templates/toddlecross/dashboard.html` [MODIFY]

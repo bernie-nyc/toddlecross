@@ -42,14 +42,14 @@ A secure, Python-driven application with a web frontend gated by Google SSO, fea
 
 ---
 
-### ⬜ Milestone 4: Python Integration & Data Engine
+### 🟩 Milestone 4: Python Integration & Data Engine
 *Goal: Build the core data generation, integration, and processing pipelines in Python.*
-- [ ] Create dedicated processing module structure (e.g., `toddlecross/engine/`)
-- [ ] Implement API client for Toddleapp using environment credentials (base URL & API Key)
-- [ ] Implement API client for Veracross using environment credentials (base URL, client ID, client secret)
-- [ ] Write integration workflows (fetching data from Veracross, mapping, and syncing to Toddleapp)
-- [ ] Build a database schema to store run history, logs, and job status
-- [ ] Expose trigger buttons and real-time status indicators on the frontend dashboard to run Python scripts asynchronously
+- [x] Create dedicated processing module structure (e.g., `toddlecross/engine/`)
+- [x] Implement API client for Toddleapp using environment credentials (base URL & API Key)
+- [x] Implement API client for Veracross using environment credentials (base URL, client ID, client secret)
+- [x] Write integration workflows (fetching data from Veracross, mapping, and syncing to Toddleapp)
+- [x] Build a database schema to store run history, logs, and job status
+- [x] Expose trigger buttons and real-time status indicators on the frontend dashboard to run Python scripts asynchronously
 
 ---
 
