@@ -1,6 +1,8 @@
-# Task List - Batch 3: Core Integration and Data Clients
+# Task List - Batch 4: Asynchronous Execution and Monitoring
 
-- [x] Create Toddle client: Implement `toddlecross/engine/toddle_client.py`
-- [x] Create Veracross client: Implement `toddlecross/engine/veracross_client.py`
-- [x] Create Sync Pipeline: Implement mapping and diff logic in `toddlecross/engine/sync_pipeline.py`
-- [x] Verify: Write unit tests in `toddlecross/tests.py` and run them to ensure everything is correct
+- [x] Create database model: Implement `SyncJob` in `toddlecross/models.py`
+- [ ] Run database migration: Generate and run migrations to create the new table
+- [ ] Add URL routing: Register status and trigger paths in `toddlecross/urls.py`
+- [ ] Implement sync views: Write background thread execution and status endpoints in `toddlecross/views.py`
+- [ ] Update dashboard UI: Integrate AJAX triggers and live logging in `toddlecross/templates/toddlecross/dashboard.html`
+- [ ] Verify: Write unit tests in `toddlecross/tests.py` and run them to ensure everything is correct
