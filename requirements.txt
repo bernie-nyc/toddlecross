@@ -5,3 +5,7 @@ dj-database-url>=2.1.0
 requests>=2.31.0
 PyLTI1p3>=1.18.0
 cryptography>=42.0.0
+psycopg2-binary>=2.9.9
+whitenoise>=6.6.0
+gunicorn>=21.2.0
+
