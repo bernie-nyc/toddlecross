@@ -322,4 +322,100 @@ class SyncPipelineTests(TestCase):
         self.assertEqual(results['deleted_count'], 0)
 
 
+class SyncJobTests(TestCase):
+    def setUp(self):
+        # We create a regular test user that is NOT staff.
+        self.regular_user = User.objects.create_user(
+            username='regular_user@example.com',
+            email='regular_user@example.com',
+            password='testpassword'
+        )
+        # We create a staff administrator.
+        self.staff_user = User.objects.create_user(
+            username='staff_user@example.com',
+            email='staff_user@example.com',
+            password='testpassword',
+            is_staff=True
+        )
+
+    def test_sync_job_add_log_helper(self):
+        # We create a pending job.
+        job = SyncJob.objects.create(status='Pending')
+        job.add_log("First line")
+        job.add_log("Second line")
+        
+        # Fetch it back from the database.
+        db_job = SyncJob.objects.get(id=job.id)
+        # Check logs field contents.
+        self.assertEqual(db_job.logs, "First line\nSecond line\n")
+
+    def test_regular_user_cannot_trigger_sync(self):
+        self.client.force_login(self.regular_user)
+        response = self.client.post(reverse('toddlecross:trigger_sync'))
+        # Should return 403 Forbidden.
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(SyncJob.objects.count(), 0)
+
+    @patch('threading.Thread')
+    def test_staff_user_can_trigger_sync(self, mock_thread):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(reverse('toddlecross:trigger_sync'))
+        # Should return 200 OK with success JSON.
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertIn('job_id', data)
+        
+        # Verify a background thread was started.
+        mock_thread.assert_called_once()
+        # Verify a SyncJob was created in Pending state.
+        self.assertEqual(SyncJob.objects.count(), 1)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.status, 'Pending')
+
+    def test_sync_status_view_permissions(self):
+        job = SyncJob.objects.create(status='Pending')
+        
+        # Regular user should be forbidden.
+        self.client.force_login(self.regular_user)
+        response = self.client.get(reverse('toddlecross:sync_status', args=[job.id]))
+        self.assertEqual(response.status_code, 403)
+        
+        # Staff user should get successful JSON status.
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse('toddlecross:sync_status', args=[job.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'Pending')
+        self.assertEqual(data['id'], job.id)
+
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_job_background_success(self, mock_sync):
+        job = SyncJob.objects.create(status='Pending')
+        
+        # Run the background helper synchronously in our test.
+        run_sync_job_background(job.id)
+        
+        db_job = SyncJob.objects.get(id=job.id)
+        # Should have updated status to Success.
+        self.assertEqual(db_job.status, 'Success')
+        self.assertIn("Complete database synchronization success", db_job.logs)
+        self.assertIsNotNone(db_job.end_time)
+
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_job_background_failure(self, mock_sync):
+        # We simulate a sync crash.
+        mock_sync.side_effect = Exception("API connection lost")
+        job = SyncJob.objects.create(status='Pending')
+        
+        run_sync_job_background(job.id)
+        
+        db_job = SyncJob.objects.get(id=job.id)
+        # Should have updated status to Failed.
+        self.assertEqual(db_job.status, 'Failed')
+        self.assertIn("Process stopped due to error: API connection lost", db_job.logs)
+        self.assertIsNotNone(db_job.end_time)
+
+
+
 
