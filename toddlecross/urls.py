@@ -12,4 +12,8 @@ urlpatterns = [
     # This path is where we send requests to invite/add new users.
     # It points to the invite_user_view function in our views.py file.
     path('invite-user/', views.invite_user_view, name='invite_user'),
+    # This path triggers a new background synchronization job.
+    path('sync/trigger/', views.trigger_sync_view, name='trigger_sync'),
+    # This path returns the real time status and logs of a specific sync job.
+    path('sync/status/<int:job_id>/', views.sync_status_view, name='sync_status'),
 ]
