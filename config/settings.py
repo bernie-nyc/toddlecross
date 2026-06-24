@@ -55,6 +55,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,6 +134,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# This directory is where Django will collect all our static files (like CSS and JS)
+# when we run the python manage.py collectstatic command.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# This setting tells WhiteNoise to gzip and cache our static files in production.
+# It makes the website load faster by compressing files.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -225,5 +240,16 @@ VERACROSS_API_BASE_URL = os.getenv('VERACROSS_API_BASE_URL', '')
 VERACROSS_TOKEN_URL = os.getenv('VERACROSS_TOKEN_URL', '')
 VERACROSS_CLIENT_ID = os.getenv('VERACROSS_CLIENT_ID', '')
 VERACROSS_CLIENT_SECRET = os.getenv('VERACROSS_CLIENT_SECRET', '')
+
+# Production security settings.
+# These headers tell Django how to handle SSL/HTTPS redirects and secure cookies.
+# The proxy SSL header tells Django to trust HTTPS requests forwarded by a load balancer/proxy.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# If set to True, all non-HTTPS requests are redirected to HTTPS.
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+# This ensures session cookies are only sent over secure HTTPS connections.
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+# This ensures CSRF security cookies are only sent over secure HTTPS connections.
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
 
 
