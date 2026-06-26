@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 from django.utils import timezone
+from django.conf import settings
+from django.core.mail import send_mail
 from .models import SyncJob
 from .engine.sync_pipeline import SyncPipeline
 
@@ -35,6 +37,26 @@ def run_sync_job_background(job_id):
         # If an error happens (like API timeout or incorrect keys), we record the failure.
         job.status = 'Failed'
         job.add_log(f"Sync error: Process stopped due to error: {e}")
+        
+        # Send failure notification email
+        try:
+            subject = f"[Toddlecross Alert] Data Sync Job #{job.id} Failed"
+            message = (
+                f"Data synchronization job #{job.id} failed.\n\n"
+                f"Status: {job.status}\n"
+                f"Error: {e}\n\n"
+                f"Job Logs:\n{job.logs}\n"
+            )
+            send_mail(
+                subject,
+                message,
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@toddlecross.com'),
+                [getattr(settings, 'ALERT_EMAIL', 'admin@example.com')],
+                fail_silently=False
+            )
+            job.add_log("Sync progress: Failure notification email dispatched to administrator.")
+        except Exception as mail_err:
+            job.add_log(f"Sync warning: Failed to dispatch failure email alert: {mail_err}")
     finally:
         # We record the exact end time and save our changes.
         job.end_time = timezone.now()

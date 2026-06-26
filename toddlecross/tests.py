@@ -476,3 +476,47 @@ class EdgeCaseIntegrationTests(TestCase):
         db_job = SyncJob.objects.get(id=job.id)
         self.assertEqual(db_job.status, 'Failed')
         self.assertIn("Process stopped due to error: Invalid input data encountered", db_job.logs)
+
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_command_success(self, mock_sync):
+        """Test that the run_sync management command executes successfully and logs to database."""
+        from django.core.management import call_command
+        
+        # We ensure no previous jobs exist.
+        SyncJob.objects.all().delete()
+        
+        call_command('run_sync')
+        
+        # Verify a SyncJob was created and marked as Success.
+        self.assertEqual(SyncJob.objects.count(), 1)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.status, 'Success')
+        self.assertIn("Complete database synchronization success", job.logs)
+
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_command_failure_dispatches_email(self, mock_sync):
+        """Test that the run_sync management command triggers an email notification on failure."""
+        from django.core.management import call_command
+        from django.core import mail
+        
+        # Clear mail outbox and database.
+        mail.outbox = []
+        SyncJob.objects.all().delete()
+        
+        # We trigger a ValueError failure.
+        mock_sync.side_effect = ValueError("Sync execution timeout")
+        
+        call_command('run_sync')
+        
+        # Verify SyncJob is marked as Failed.
+        self.assertEqual(SyncJob.objects.count(), 1)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.status, 'Failed')
+        self.assertIn("Sync execution timeout", job.logs)
+        
+        # Verify failure alert email was sent.
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("Data Sync Job", email.subject)
+        self.assertIn("Sync execution timeout", email.body)
+        self.assertIn("admin@example.com", email.to)
