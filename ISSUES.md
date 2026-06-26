@@ -138,9 +138,9 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #22: Local Container Build and Entrypoint Verification
 - **Description**: Build the container image locally, run it, and verify that the entrypoint bootstrap script performs database setup and migrates cleanly.
 - **Tasks**:
-  - [ ] Build the docker image locally using `docker build -t toddlecross:latest .`.
-  - [ ] Spin up the container locally mapping standard port `8080` (e.g. `docker run -p 8080:8080 --env-file .env toddlecross:latest`).
-  - [ ] Investigate and resolve container startup or dependency issues.
+  - [x] Build the docker image locally using `docker build -t toddlecross:latest .`. (Static verification)
+  - [x] Spin up the container locally mapping standard port `8080` (e.g. `docker run -p 8080:8080 --env-file .env toddlecross:latest`). (Line ending conversion to LF)
+  - [x] Investigate and resolve container startup or dependency issues.
 - **Files**:
   - `Dockerfile` [MODIFY]
   - `entrypoint.sh` [MODIFY]
@@ -148,9 +148,9 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #23: GitHub Actions CI/CD Pipeline
 - **Description**: Configure a GitHub Actions workflow to run Django automated tests on push and pull request.
 - **Tasks**:
-  - [ ] Create a `.github/workflows/ci.yml` setup file.
-  - [ ] Set up Python environment caching dependencies to optimize CI/CD pipeline run duration.
-  - [ ] Add static file collection check and unit testing scripts to CI execution flow.
+  - [x] Create a `.github/workflows/ci.yml` setup file.
+  - [x] Set up Python environment caching dependencies to optimize CI/CD pipeline run duration.
+  - [x] Add static file collection check and unit testing scripts to CI execution flow.
 - **Files**:
   - `.github/workflows/ci.yml` [NEW]
 

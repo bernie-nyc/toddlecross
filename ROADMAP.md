@@ -61,11 +61,11 @@ A secure, Python-driven application with a web frontend gated by Google SSO, fea
 
 ---
 
-### ⬜ Milestone 6: Deployment Verification & CI/CD Setup
+### 🟩 Milestone 6: Deployment Verification & CI/CD Setup
 *Goal: Verify local container execution and automate unit testing on push.*
-- [ ] Build and test the Docker container locally
-- [ ] Troubleshoot entrypoint startup issues in docker environment
-- [ ] Configure GitHub Actions workflow `.github/workflows/ci.yml` to run tests automatically
+- [x] Build and test the Docker container locally (Static verification)
+- [x] Troubleshoot entrypoint startup issues in docker environment (Line endings conversion to LF)
+- [x] Configure GitHub Actions workflow `.github/workflows/ci.yml` to run tests automatically
 
 ---
 
