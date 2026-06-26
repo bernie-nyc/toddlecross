@@ -129,3 +129,76 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 - **Files**:
   - `Dockerfile` [NEW]
   - `entrypoint.sh` [NEW]
+
+---
+
+## 📦 Batch 6: Deployment Verification & CI/CD Setup (Milestone 6)
+*Focus: Verify the production Docker configuration locally and automate test workflows.*
+
+### 🔹 Issue #22: Local Container Build and Entrypoint Verification
+- **Description**: Build the container image locally, run it, and verify that the entrypoint bootstrap script performs database setup and migrates cleanly.
+- **Tasks**:
+  - [ ] Build the docker image locally using `docker build -t toddlecross:latest .`.
+  - [ ] Spin up the container locally mapping standard port `8080` (e.g. `docker run -p 8080:8080 --env-file .env toddlecross:latest`).
+  - [ ] Investigate and resolve container startup or dependency issues.
+- **Files**:
+  - `Dockerfile` [MODIFY]
+  - `entrypoint.sh` [MODIFY]
+
+### 🔹 Issue #23: GitHub Actions CI/CD Pipeline
+- **Description**: Configure a GitHub Actions workflow to run Django automated tests on push and pull request.
+- **Tasks**:
+  - [ ] Create a `.github/workflows/ci.yml` setup file.
+  - [ ] Set up Python environment caching dependencies to optimize CI/CD pipeline run duration.
+  - [ ] Add static file collection check and unit testing scripts to CI execution flow.
+- **Files**:
+  - `.github/workflows/ci.yml` [NEW]
+
+---
+
+## 📦 Batch 7: Quality Assurance & Code Coverage (Milestone 7)
+*Focus: Instrument test coverage reporting and verify error/failure handling in client connections.*
+
+### 🔹 Issue #24: Test Coverage Integration
+- **Description**: Measure test coverage of Django applications and integration scripts to ensure engine paths are tested.
+- **Tasks**:
+  - [ ] Install `coverage` and add it to requirements.txt.
+  - [ ] Create a `.coveragerc` file in the root workspace to exclude virtual environment files, migrations, and django settings.
+  - [ ] Generate HTML coverage reports locally and verify that core views and engines are covered.
+- **Files**:
+  - `requirements.txt` [MODIFY]
+  - `.coveragerc` [NEW]
+
+### 🔹 Issue #25: Integration & Edge-Case Testing
+- **Description**: Add unit tests focusing on failure injection to verify how Toddlecross recovers from external server API issues.
+- **Tasks**:
+  - [ ] Write mocks simulating HTTP timeout error codes from Toddleapp GraphQL queries.
+  - [ ] Write tests to verify Veracross OAuth token expiry recovery flows.
+  - [ ] Verify that UI dashboard remains functional when background sync jobs fail.
+- **Files**:
+  - `toddlecross/tests.py` [MODIFY]
+
+---
+
+## 📦 Batch 8: Automated Scheduling & Failure Alerts (Milestone 8)
+*Focus: Create cron jobs for automatic synchronization and notify administrators of failures.*
+
+### 🔹 Issue #26: Cron/Scheduled Sync Executions
+- **Description**: Build a custom command-line script/command that runs the sync process so that it can be scheduled as a cron job.
+- **Tasks**:
+  - [ ] Create a custom Django management command `run_sync` inside `toddlecross/management/commands/`.
+  - [ ] Implement arguments or options to configure which sync paths to run (e.g. students only, teachers only, or both).
+  - [ ] Verify that this command creates and updates `SyncJob` run history database records identical to the frontend UI execution.
+- **Files**:
+  - `toddlecross/management/commands/run_sync.py` [NEW]
+
+### 🔹 Issue #27: Failure Email/Slack Notifications
+- **Description**: Notify staff/admins immediately when a data synchronization run (either cron or UI-driven) crashes or fails.
+- **Tasks**:
+  - [ ] Wire email warning alerts using `django.core.mail.send_mail`.
+  - [ ] Send detailed diagnostics log snippet to configured `SUPERUSER_EMAIL` or alert email addresses upon a `Failed` status transition.
+  - [ ] Add SMTP configuration variables to config settings to fetch mail credentials from environment variables.
+- **Files**:
+  - `config/settings.py` [MODIFY]
+  - `toddlecross/views.py` [MODIFY]
+  - `toddlecross/management/commands/run_sync.py` [MODIFY]

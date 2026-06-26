@@ -58,3 +58,27 @@ A secure, Python-driven application with a web frontend gated by Google SSO, fea
 - [x] Configure production-ready database support (e.g., PostgreSQL via `DATABASE_URL`)
 - [x] Set up static file collection (`collectstatic`) and security headers
 - [x] Write deployment configuration (e.g., Dockerfile or deployment scripts)
+
+---
+
+### ⬜ Milestone 6: Deployment Verification & CI/CD Setup
+*Goal: Verify local container execution and automate unit testing on push.*
+- [ ] Build and test the Docker container locally
+- [ ] Troubleshoot entrypoint startup issues in docker environment
+- [ ] Configure GitHub Actions workflow `.github/workflows/ci.yml` to run tests automatically
+
+---
+
+### ⬜ Milestone 7: Quality Assurance & Code Coverage
+*Goal: Instrument test coverage and expand edge case coverage.*
+- [ ] Integrate `coverage` packages and configure `.coveragerc`
+- [ ] Achieve >90% test coverage on engine sync components
+- [ ] Implement robust mock assertions for API failure states (rate limits, timeouts)
+
+---
+
+### ⬜ Milestone 8: Automated Scheduling & Failure Alerts
+*Goal: Enable automatic background execution and alerting for sync failures.*
+- [ ] Build a custom Django management command to run sync jobs from shell
+- [ ] Implement SMTP-based administrative email notifications on sync job failure
+- [ ] Design and test scheduling strategy (host system cron or background worker scheduler)
