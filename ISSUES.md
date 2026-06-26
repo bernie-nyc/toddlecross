@@ -162,9 +162,9 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #24: Test Coverage Integration
 - **Description**: Measure test coverage of Django applications and integration scripts to ensure engine paths are tested.
 - **Tasks**:
-  - [ ] Install `coverage` and add it to requirements.txt.
-  - [ ] Create a `.coveragerc` file in the root workspace to exclude virtual environment files, migrations, and django settings.
-  - [ ] Generate HTML coverage reports locally and verify that core views and engines are covered.
+  - [x] Install `coverage` and add it to requirements.txt.
+  - [x] Create a `.coveragerc` file in the root workspace to exclude virtual environment files, migrations, and django settings.
+  - [x] Generate HTML coverage reports locally and verify that core views and engines are covered.
 - **Files**:
   - `requirements.txt` [MODIFY]
   - `.coveragerc` [NEW]
@@ -172,9 +172,9 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #25: Integration & Edge-Case Testing
 - **Description**: Add unit tests focusing on failure injection to verify how Toddlecross recovers from external server API issues.
 - **Tasks**:
-  - [ ] Write mocks simulating HTTP timeout error codes from Toddleapp GraphQL queries.
-  - [ ] Write tests to verify Veracross OAuth token expiry recovery flows.
-  - [ ] Verify that UI dashboard remains functional when background sync jobs fail.
+  - [x] Write mocks simulating HTTP timeout error codes from Toddleapp GraphQL queries.
+  - [x] Write tests to verify Veracross OAuth token expiry recovery flows.
+  - [x] Verify that UI dashboard remains functional when background sync jobs fail.
 - **Files**:
   - `toddlecross/tests.py` [MODIFY]
 
