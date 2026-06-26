@@ -53,8 +53,8 @@ A secure, Python-driven application with a web frontend gated by Google SSO, fea
 
 ---
 
-### ⬜ Milestone 5: Production Readiness & Deployment
+### 🟩 Milestone 5: Production Readiness & Deployment
 *Goal: Prepare the application for staging/production deployment.*
-- [ ] Configure production-ready database support (e.g., PostgreSQL via `DATABASE_URL`)
-- [ ] Set up static file collection (`collectstatic`) and security headers
-- [ ] Write deployment configuration (e.g., Dockerfile or deployment scripts)
+- [x] Configure production-ready database support (e.g., PostgreSQL via `DATABASE_URL`)
+- [x] Set up static file collection (`collectstatic`) and security headers
+- [x] Write deployment configuration (e.g., Dockerfile or deployment scripts)

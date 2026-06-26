@@ -97,3 +97,35 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 - **Files**:
   - `toddlecross/views.py` [MODIFY]
   - `toddlecross/templates/toddlecross/dashboard.html` [MODIFY]
+
+---
+
+## 📦 Batch 5: Production Readiness & Deployment (Milestone 5)
+*Focus: Prepare application for production deployment (PostgreSQL, static asset collection, Docker).*
+
+### 🔹 Issue #19: Package & Configure Production-Ready Database
+- **Description**: Enable PostgreSQL support and secure database settings.
+- **Tasks**:
+  - [x] Add psycopg2-binary to requirements.txt.
+  - [x] Add dj-database-url to settings.py.
+- **Files**:
+  - `requirements.txt` [MODIFY]
+  - `config/settings.py` [MODIFY]
+
+### 🔹 Issue #20: Production Static Asset Compilation
+- **Description**: Configure collectstatic targets, WhiteNoise middleware, and security headers.
+- **Tasks**:
+  - [x] Configure STATIC_ROOT and WhiteNoise settings.
+  - [x] Enable SSL redirect, secure CSRF and session cookies in production.
+- **Files**:
+  - `config/settings.py` [MODIFY]
+  - `requirements.txt` [MODIFY]
+
+### 🔹 Issue #21: Containerization and Bootstrapping script
+- **Description**: Write a production Dockerfile and startup shell script.
+- **Tasks**:
+  - [x] Build Dockerfile with multi-stage build.
+  - [x] Write entrypoint.sh script for migrations, staticfiles collection, superuser creation, and WSGI.
+- **Files**:
+  - `Dockerfile` [NEW]
+  - `entrypoint.sh` [NEW]
