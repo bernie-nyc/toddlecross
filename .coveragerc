@@ -1,0 +1,12 @@
+[run]
+source = toddlecross
+omit =
+    */migrations/*
+    */tests.py
+    */apps.py
+    */admin.py
+    toddlecross/generate_lti_keys.py
+
+[report]
+show_missing = True
+fail_under = 80

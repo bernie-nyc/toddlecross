@@ -47,11 +47,15 @@ jobs:
         run: |
           python manage.py migrate --noinput
 
-      - name: Run Django Tests
+      - name: Run Django Tests with Coverage
         env:
           SECRET_KEY: 'django-insecure-test-key-for-ci'
         run: |
-          python manage.py test
+          coverage run manage.py test
+
+      - name: Run Coverage Report
+        run: |
+          coverage report
 
       - name: Run Collectstatic Verification
         env:

@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+import requests
 # pyrefly: ignore [missing-import]
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -419,5 +420,59 @@ class SyncJobTests(TestCase):
         self.assertIsNotNone(db_job.end_time)
 
 
+class EdgeCaseIntegrationTests(TestCase):
+    @patch('time.time')
+    @patch('requests.post')
+    def test_veracross_token_expiry_renewal(self, mock_post, mock_time):
+        """Test that VeracrossClient fetches a new token when the current token is close to expiry."""
+        # Setup mock responses for getting token
+        mock_response_1 = MagicMock()
+        mock_response_1.json.return_value = {'access_token': 'token_one', 'expires_in': 3600}
+        mock_response_1.status_code = 200
 
+        mock_response_2 = MagicMock()
+        mock_response_2.json.return_value = {'access_token': 'token_two', 'expires_in': 3600}
+        mock_response_2.status_code = 200
 
+        mock_post.side_effect = [mock_response_1, mock_response_2]
+
+        client = VeracrossClient()
+
+        # Initial time: 1000.0. The token will expire at 4600.0.
+        mock_time.return_value = 1000.0
+        token1 = client.get_access_token()
+        self.assertEqual(token1, 'token_one')
+        self.assertEqual(client._token_expiry, 4600.0)
+
+        # Call again at time 2000.0 (still valid). No new post call should be made.
+        mock_time.return_value = 2000.0
+        token_cached = client.get_access_token()
+        self.assertEqual(token_cached, 'token_one')
+        # Total calls so far: 1
+        self.assertEqual(mock_post.call_count, 1)
+
+        # Call again at time 4550.0 (exceeds safety buffer of expiry - 60, i.e., 4540.0). A new post call should be made.
+        mock_time.return_value = 4550.0
+        token2 = client.get_access_token()
+        self.assertEqual(token2, 'token_two')
+        self.assertEqual(mock_post.call_count, 2)
+
+    @patch('requests.post')
+    def test_toddle_graphql_timeout(self, mock_post):
+        """Test that ToddleClient raises a Timeout exception when the HTTP request times out."""
+        mock_post.side_effect = requests.exceptions.Timeout("Connection timed out")
+        client = ToddleClient()
+        with self.assertRaises(requests.exceptions.Timeout):
+            client.execute_graphql("query { hello }")
+
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_sync_job_background_handles_exceptions(self, mock_sync):
+        """Test that run_sync_job_background catches errors and logs traceback, marking status as Failed."""
+        mock_sync.side_effect = ValueError("Invalid input data encountered")
+        
+        job = SyncJob.objects.create(status='Pending')
+        run_sync_job_background(job.id)
+        
+        db_job = SyncJob.objects.get(id=job.id)
+        self.assertEqual(db_job.status, 'Failed')
+        self.assertIn("Process stopped due to error: Invalid input data encountered", db_job.logs)
