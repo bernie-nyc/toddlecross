@@ -1,48 +1,52 @@
-# Walkthrough - Batch 7: Quality Assurance & Code Coverage
+# Walkthrough - Batch 8: Automated Scheduling & Failure Alerts
 
-This walkthrough details the addition of edge-case unit tests, coverage instrumentation, and automated CI/CD coverage report tracking.
+This walkthrough details the addition of a custom management command for cron execution and SMTP email alerts for sync job failures.
 
 ## Changes Made
 
-### 1. Test Coverage Instrumentation (Issue #24)
-- Added `coverage` package to [requirements.txt](file:///h:/My%20Drive/Toddlecross/requirements.txt).
-- Created [.coveragerc](file:///h:/My%20Drive/Toddlecross/.coveragerc) to track `toddlecross` application coverage, setting `fail_under = 80`. We configured exclusions for Django migrations, tests, admin setups, app definitions, and the offline script `generate_lti_keys.py` to prevent skewing test metrics.
-- Updated [.github/workflows/ci.yml](file:///h:/My%20Drive/Toddlecross/.github/workflows/ci.yml) to run unit tests under `coverage run` and execute `coverage report` to enforce coverage criteria in CI.
+### 1. SMTP Email Configurations (Issue #27)
+- Added SMTP settings in [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py) to read credentials from environment variables (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, etc.), with fallbacks to a local dev setup.
+- Established `ALERT_EMAIL` configuration to target the site superuser.
 
-### 2. Edge Case Unit Tests (Issue #25)
-- Appended class `EdgeCaseIntegrationTests` to [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to cover:
-  - **Token Expiry Renewal**: Verifies that `VeracrossClient` successfully triggers a second authentication token request when token expiry boundaries (expires_in - 60s) are crossed.
-  - **Toddle GraphQL Timeouts**: Verifies that standard HTTP timeout exceptions from the requests module are raised correctly during queries.
-  - **Background Thread Exceptions**: Verifies that the background worker function `run_sync_job_background` catches and registers errors correctly, shifting status to `Failed` and logging the failure reason to the database.
+### 2. Custom run_sync Command (Issue #26)
+- Created the custom Django management command [run_sync.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/run_sync.py) under `toddlecross/management/commands/`.
+- This command enables running the sync pipeline from the host command line or scheduler (e.g. system cron), synchronously outputting job creation and final statuses.
+- Creates and updates `SyncJob` execution metrics records in the database identically to the frontend dashboard.
+
+### 3. Failure Email Alert Dispatching (Issue #27)
+- Updated `run_sync_job_background` inside [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to dispatch an administrative email alert immediately if a sync job fails.
+- The warning email contains the job ID, error traceback string, and full execution log contents.
+- Wrapped the mail trigger in a try-except block to ensure any mail server issues are caught gracefully and recorded without hiding the original database execution results.
 
 ---
 
 ## Verification Results
 
 ### Local Unit Tests & Coverage Check
-We ran the unit tests under coverage locally inside the virtual environment:
-- **Test Executions**: All **27 tests** passed successfully:
+We ran the unit tests under coverage locally:
+- **Test Executions**: All **29 tests** passed successfully:
   ```cmd
-  Ran 27 tests in 9.592s
+  Ran 29 tests in 8.389s
   OK
   ```
-- **Coverage Metrics**: Total application coverage measured at **85%** (exceeding our 80% threshold):
+- **Coverage Metrics**: Total application coverage measured at **85%**, with the new `run_sync.py` file reaching **100%** coverage:
   ```cmd
-  Name                                     Stmts   Miss  Cover
-  ------------------------------------------------------------
-  toddlecross\__init__.py                      0      0   100%
-  toddlecross\engine\sync_pipeline.py         90     23    74%
-  toddlecross\engine\toddle_client.py         27     10    63%
-  toddlecross\engine\veracross_client.py      33      1    97%
-  toddlecross\lti_views.py                    65      5    92%
-  toddlecross\models.py                       15      1    93%
-  toddlecross\urls.py                          5      0   100%
-  toddlecross\views.py                        76      7    91%
-  ------------------------------------------------------------
-  TOTAL                                      311     47    85%
+  Name                                          Stmts   Miss  Cover
+  ---------------------------------------------------------------------------
+  toddlecross\__init__.py                           0      0   100%
+  toddlecross\engine\sync_pipeline.py              90     23    74%
+  toddlecross\engine\toddle_client.py              27     10    63%
+  toddlecross\engine\veracross_client.py           33      1    97%
+  toddlecross\lti_views.py                         65      5    92%
+  toddlecross\management\commands\run_sync.py      11      0   100%
+  toddlecross\models.py                            15      1    93%
+  toddlecross\urls.py                               5      0   100%
+  toddlecross\views.py                             85      9    89%
+  ---------------------------------------------------------------------------
+  TOTAL                                           331     49    85%
   ```
 
 ### GitHub Actions CI/CD Verification
-The updated coverage-tracking pipeline triggered and executed successfully on GitHub:
-- **Action Run URL**: [Run 28257235872](https://github.com/bernie-nyc/toddlecross/actions/runs/28257235872)
-- **Job Outcome**: The `test` job passed successfully in `30s`, completing all steps including test runs and coverage report logging.
+The updated test suite ran and passed successfully on GitHub:
+- **Action Run URL**: [Run 28258671685](https://github.com/bernie-nyc/toddlecross/actions/runs/28258671685)
+- **Job Outcome**: The `test` job passed successfully in `28s`.
