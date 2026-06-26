@@ -1,7 +1,6 @@
-# Task List - Batch 5: Production Readiness and Deployment
+# Task List - Batch 6: Deployment Verification & CI/CD Setup
 
-- [x] Update requirements: Add `psycopg2-binary`, `whitenoise`, and `gunicorn` to `requirements.txt`
-- [x] Configure settings: Set `STATIC_ROOT`, add WhiteNoise middleware, and configure security headers in `config/settings.py`
-- [x] Create Dockerfile: Write a production `Dockerfile` in the root folder
-- [x] Create entrypoint script: Write a startup shell script in `entrypoint.sh`
-- [x] Verify: Run static file collection and unit tests to ensure everything is correct
+- [x] Verify Docker container files (static review for syntax, dependencies, and formatting)
+- [x] Create GitHub Actions workflow (`.github/workflows/ci.yml`)
+- [x] Execute local dry-run verification (Django tests, migration, collectstatic checks)
+- [x] Push updates to dev branch to verify CI pipeline execution
