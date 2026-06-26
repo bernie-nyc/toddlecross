@@ -186,18 +186,18 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #26: Cron/Scheduled Sync Executions
 - **Description**: Build a custom command-line script/command that runs the sync process so that it can be scheduled as a cron job.
 - **Tasks**:
-  - [ ] Create a custom Django management command `run_sync` inside `toddlecross/management/commands/`.
-  - [ ] Implement arguments or options to configure which sync paths to run (e.g. students only, teachers only, or both).
-  - [ ] Verify that this command creates and updates `SyncJob` run history database records identical to the frontend UI execution.
+  - [x] Create a custom Django management command `run_sync` inside `toddlecross/management/commands/`.
+  - [x] Implement arguments or options to configure which sync paths to run (e.g. students only, teachers only, or both).
+  - [x] Verify that this command creates and updates `SyncJob` run history database records identical to the frontend UI execution.
 - **Files**:
   - `toddlecross/management/commands/run_sync.py` [NEW]
 
 ### 🔹 Issue #27: Failure Email/Slack Notifications
 - **Description**: Notify staff/admins immediately when a data synchronization run (either cron or UI-driven) crashes or fails.
 - **Tasks**:
-  - [ ] Wire email warning alerts using `django.core.mail.send_mail`.
-  - [ ] Send detailed diagnostics log snippet to configured `SUPERUSER_EMAIL` or alert email addresses upon a `Failed` status transition.
-  - [ ] Add SMTP configuration variables to config settings to fetch mail credentials from environment variables.
+  - [x] Wire email warning alerts using `django.core.mail.send_mail`.
+  - [x] Send detailed diagnostics log snippet to configured `SUPERUSER_EMAIL` or alert email addresses upon a `Failed` status transition.
+  - [x] Add SMTP configuration variables to config settings to fetch mail credentials from environment variables.
 - **Files**:
   - `config/settings.py` [MODIFY]
   - `toddlecross/views.py` [MODIFY]

@@ -77,8 +77,8 @@ A secure, Python-driven application with a web frontend gated by Google SSO, fea
 
 ---
 
-### ⬜ Milestone 8: Automated Scheduling & Failure Alerts
+### 🟩 Milestone 8: Automated Scheduling & Failure Alerts
 *Goal: Enable automatic background execution and alerting for sync failures.*
-- [ ] Build a custom Django management command to run sync jobs from shell
-- [ ] Implement SMTP-based administrative email notifications on sync job failure
-- [ ] Design and test scheduling strategy (host system cron or background worker scheduler)
+- [x] Build a custom Django management command to run sync jobs from shell (`run_sync`)
+- [x] Implement SMTP-based administrative email notifications on sync job failure
+- [x] Design and test scheduling strategy (verified via unit tests & mock send_mail triggers)
