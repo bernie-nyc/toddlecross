@@ -45,6 +45,12 @@ This walkthrough details the changes made to the project workspace on the dev br
 - Implemented field-mapping schema rules for translating student and teacher structures.
 - Implemented diffing logic to separate incoming records into creation, update, and deletion batches, pushing updates to Toddle via GraphQL mutations.
 
+### 9. Production Readiness and Deployment (Batch 5)
+- Added production-readiness packages (`psycopg2-binary`, `whitenoise`, `gunicorn`) to [requirements.txt](file:///h:/My%20Drive/Toddlecross/requirements.txt).
+- Configured static root folder `STATIC_ROOT`, compression via `whitenoise.storage.CompressedManifestStaticFilesStorage`, and secure SSL/security headers inside [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py).
+- Created a production [Dockerfile](file:///h:/My%20Drive/Toddlecross/Dockerfile) in the root workspace directory.
+- Created [entrypoint.sh](file:///h:/My%20Drive/Toddlecross/entrypoint.sh) startup script running migrations, collectstatic, ensuring superuser, and starting the gunicorn WSGI app server.
+
 ---
 
 ## Verification Results
@@ -52,16 +58,17 @@ This walkthrough details the changes made to the project workspace on the dev br
 ### Automated Tests
 We expanded the test suite in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to verify client request structures, authorization headers, mapping translations, diff computations, and the full pipeline execution using mock responses.
 
-All 18 Django unit tests ran and passed successfully in the .venv environment:
+All 24 Django unit tests ran and passed successfully in the .venv environment:
 
 ```cmd
 Creating test database for alias 'default'...
-..................
+........................
 ----------------------------------------------------------------------
-Ran 18 tests in 4.757s
+Ran 24 tests in 10.109s
 
 OK
 Destroying test database for alias 'default'...
-Found 18 test(s).
+Found 24 test(s).
 System check identified no issues (0 silenced).
 ```
+
