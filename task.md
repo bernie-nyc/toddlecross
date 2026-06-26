@@ -1,6 +1,7 @@
-# Task List - Batch 6: Deployment Verification & CI/CD Setup
+# Task List - Batch 7: Quality Assurance & Code Coverage
 
-- [x] Verify Docker container files (static review for syntax, dependencies, and formatting)
-- [x] Create GitHub Actions workflow (`.github/workflows/ci.yml`)
-- [x] Execute local dry-run verification (Django tests, migration, collectstatic checks)
-- [x] Push updates to dev branch to verify CI pipeline execution
+- [x] Add `coverage` package to `requirements.txt`
+- [x] Create `.coveragerc` configuration file
+- [x] Implement new integration and edge-case unit tests in `toddlecross/tests.py`
+- [x] Update GitHub Actions workflow (`.github/workflows/ci.yml`) to include coverage reporting
+- [x] Verify unit tests and coverage metrics pass successfully locally and in remote CI
