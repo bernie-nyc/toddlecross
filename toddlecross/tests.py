@@ -4,6 +4,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
 
+from toddlecross.models import SyncJob
+from toddlecross.views import run_sync_job_background
 from toddlecross.engine.toddle_client import ToddleClient
 from toddlecross.engine.veracross_client import VeracrossClient
 from toddlecross.engine.sync_pipeline import SyncPipeline

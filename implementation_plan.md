@@ -1,6 +1,6 @@
-# Implementation Plan - Batch 4: Asynchronous Execution and Monitoring
+# Implementation Plan - Batch 5: Production Readiness and Deployment
 
-This plan outlines the changes to implement the Run History database schema, background worker threads, and a live log streaming interface for the sync pipeline.
+This plan outlines the changes to prepare the Toddlecross web application for production deployment.
 
 ## User Review Required
 
@@ -10,39 +10,34 @@ This plan outlines the changes to implement the Run History database schema, bac
 
 ## Proposed Changes
 
-### Models and Database
+### Configuration and Dependencies
 
-#### [MODIFY] [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py)
-- [ ] Create `SyncJob` model to store status (Pending, Running, Success, Failed), run timestamps, log text, and success counters.
+#### [MODIFY] [requirements.txt](file:///h:/My%20Drive/Toddlecross/requirements.txt)
+- [ ] Add `psycopg2-binary` for PostgreSQL support in production.
+- [ ] Add `whitenoise` to serve static files efficiently.
+- [ ] Add `gunicorn` as the production WSGI application server.
 
----
-
-### Views and Gating
-
-#### [MODIFY] [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py)
-- [ ] Implement `trigger_sync_view` to start a sync job in a background thread and return its job ID.
-- [ ] Implement `sync_status_view` to return the status, metrics, and logs of a specific sync job as JSON.
-- [ ] Update `home_view` to retrieve and context-pass the latest sync jobs to the dashboard.
-
-#### [MODIFY] [urls.py](file:///h:/My%20Drive/Toddlecross/toddlecross/urls.py)
-- [ ] Register path `/sync/trigger/` mapping to `trigger_sync_view`.
-- [ ] Register path `/sync/status/<int:job_id>/` mapping to `sync_status_view`.
+#### [MODIFY] [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py)
+- [ ] Add `STATIC_ROOT` setting for static files collection.
+- [ ] Add WhiteNoise middleware to `MIDDLEWARE`.
+- [ ] Configure proxy SSL and security headers (SSL redirect, secure session cookies, secure CSRF cookies).
 
 ---
 
-### Templates and Dashboard
+### Deployment Files
 
-#### [MODIFY] [dashboard.html](file:///h:/My%20Drive/Toddlecross/toddlecross/templates/toddlecross/dashboard.html)
-- [ ] Connect the "Run Data Job" button to make an AJAX POST request triggering the sync.
-- [ ] Add a live log viewer pane that polls `/sync/status/<job_id>/` to stream logs.
-- [ ] Add a run history table showing the last 10 sync jobs.
+#### [NEW] [Dockerfile](file:///h:/My%20Drive/Toddlecross/Dockerfile)
+- [ ] Create a production Dockerfile to build and package the application inside a container.
+
+#### [NEW] [entrypoint.sh](file:///h:/My%20Drive/Toddlecross/entrypoint.sh)
+- [ ] Create a startup script to run database migrations, collect static assets, ensure the default superuser exists, and run gunicorn.
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-- [ ] Add unit tests in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py) to check:
-  - Starting a sync job triggers a background thread and returns the job ID.
-  - The status view returns the correct JSON payload containing log text and run state.
-  - Running a successful or failed sync job correctly saves the outcome in the database.
+- [ ] Run `.venv\Scripts\python.exe manage.py test` to ensure settings alterations did not break any views or authentication.
+
+### Manual Verification
+- [ ] Test the static asset collector command locally using `.venv\Scripts\python.exe manage.py collectstatic --noinput` to verify that assets are written to the static root folder.
