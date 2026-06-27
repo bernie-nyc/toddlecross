@@ -1,31 +1,40 @@
-# Walkthrough - Batch 12: Containerization & Deployment Orchestration
+# Walkthrough - Batch 13: Dynamic Cron Scheduling in Django Admin
 
-This walkthrough details the addition of docker orchestration configurations, default superuser initialization variables, and database URL overrides.
+This walkthrough details the addition of database-driven `SyncSchedule` models, admin panel integration, and management CLI command schedule checks.
 
 ## Changes Made
 
-### 1. Customizable Superuser Initialization (Issue #30)
-- Registered environment setting lookups for `SUPERUSER_USERNAME`, `SUPERUSER_EMAIL`, and `SUPERUSER_PASSWORD` inside [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py) to enable customization of the default admin account created during container entrypoint execution.
+### 1. Dependencies (Issue #31)
+- Added `croniter>=2.0.0` inside [requirements.txt](file:///h:/My%20Drive/Toddlecross/requirements.txt) to parse standard cron expressions.
 
-### 2. Environment Documentation (Issue #30)
-- Updated [.env.example](file:///h:/My%20Drive/Toddlecross/.env.example) to include:
-  - Documentation for using PostgreSQL `DATABASE_URL` override configurations.
-  - Documented keys for `SUPERUSER_USERNAME`, `SUPERUSER_EMAIL`, and `SUPERUSER_PASSWORD`.
+### 2. SyncSchedule DB Model (Issue #31)
+- Added `SyncSchedule` model and a custom `validate_cron_expression` validator in [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py).
+- Applied database migration `0003_syncschedule.py` adding the schedule model.
 
-### 3. Docker Compose Orchestration (Issue #30)
-- Created [docker-compose.yml](file:///h:/My%20Drive/Toddlecross/docker-compose.yml) defining:
-  - `web` service building from root `Dockerfile`, mounting the workspace directory, reading from `.env`, and exposing port `8080`.
-  - `db` service running PostgreSQL `postgres:15-alpine` with persistent volume mappings.
+### 3. Django Admin Panel (Issue #31)
+- Custom-registered `SyncSchedule` inside [admin.py](file:///h:/My%20Drive/Toddlecross/toddlecross/admin.py):
+  - Displays name, cron string, sync scope, active status, and last trigger time.
+  - Computes and displays the next expected run timestamp dynamically using `croniter`.
+
+### 4. run_sync Management Command CLI (Issue #31)
+- Added a `--scheduled` boolean argument to [run_sync.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/run_sync.py).
+- When run with `--scheduled`, iterates through all active database schedules, calculates if any are due to execute at the current minute, and runs them sequentially.
+
+### 5. Unit Tests (Issue #31)
+- Appended unit tests inside [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
+  - `test_cron_expression_validator_valid` and `test_cron_expression_validator_invalid`: Checks expression validations.
+  - `test_scheduled_command_triggers_when_due`: Verifies active/due cron triggers and updates last run times.
+  - `test_scheduled_command_ignores_inactive` and `test_scheduled_command_ignores_not_due`: Verifies filter exclusions.
 
 ---
 
 ## Verification Results
 
 ### Local Unit Tests
-We ran the complete unit tests locally to verify there were no regressions:
-- **Test Executions**: All **37 tests** passed successfully:
+We executed the expanded unit test suite locally:
+- **Test Executions**: All **42 tests** passed successfully:
   ```cmd
-  Ran 37 tests in 10.043s
+  Ran 42 tests in 10.481s
   OK
   ```
-- **Coverage**: Measured at **83%** overall.
+- **Coverage**: Measured at **84%** overall.

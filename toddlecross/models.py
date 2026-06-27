@@ -57,3 +57,41 @@ class SyncJob(models.Model):
     # This method defines how a SyncJob is printed as a string.
     def __str__(self):
         return f"Sync Job #{self.id} ({self.status})"
+
+
+from django.core.exceptions import ValidationError
+from croniter import croniter
+
+def validate_cron_expression(value):
+    try:
+        if len(value.split()) < 5:
+            raise ValueError("Cron expressions must contain exactly 5 space-separated fields (minute, hour, day of month, month, day of week).")
+        croniter(value)
+    except Exception as e:
+        raise ValidationError(f"Invalid cron expression '{value}': {e}")
+
+
+# This model represents a dynamic execution schedule configured from Django Admin.
+class SyncSchedule(models.Model):
+    name = models.CharField(max_length=100, default='Default Sync Schedule')
+    is_active = models.BooleanField(default=True)
+    cron_expression = models.CharField(
+        max_length=100,
+        default='0 * * * *',
+        validators=[validate_cron_expression],
+        help_text='Standard 5-field cron expression: minute hour day-of-month month day-of-week (e.g., "*/15 * * * *" or "0 2 * * *")'
+    )
+    sync_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('students', 'Students Only'),
+            ('teachers', 'Teachers Only'),
+            ('both', 'Complete Sync'),
+        ],
+        default='both'
+    )
+    last_run = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        status = "Active" if self.is_active else "Inactive"
+        return f"{self.name} ({self.cron_expression}) - {status}"

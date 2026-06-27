@@ -4,8 +4,9 @@ import requests
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
-from toddlecross.models import SyncJob
+from toddlecross.models import SyncJob, SyncSchedule
 from toddlecross.views import run_sync_job_background
 from toddlecross.engine.toddle_client import ToddleClient
 from toddlecross.engine.veracross_client import VeracrossClient
@@ -666,4 +667,89 @@ class EdgeCaseIntegrationTests(TestCase):
         self.assertEqual(job.sync_type, 'teachers')
         mock_teachers.assert_called_once()
         mock_students.assert_not_called()
+
+    def test_cron_expression_validator_valid(self):
+        from toddlecross.models import validate_cron_expression
+        # Valid cron expressions should pass without raising exceptions
+        for expr in ['* * * * *', '*/15 * * * *', '0 2 * * *', '5 4 * * 1-5']:
+            validate_cron_expression(expr)
+
+    def test_cron_expression_validator_invalid(self):
+        from toddlecross.models import validate_cron_expression
+        # Invalid cron expressions should raise ValidationError
+        for expr in ['invalid', '* * *', 'invalid * * * *', '60 * * * *']:
+            with self.assertRaises(ValidationError):
+                validate_cron_expression(expr)
+
+    @patch('toddlecross.management.commands.run_sync.run_sync_job_background')
+    def test_scheduled_command_triggers_when_due(self, mock_run_background):
+        from django.core.management import call_command
+        from django.utils import timezone
+        
+        SyncJob.objects.all().delete()
+        SyncSchedule.objects.all().delete()
+        
+        # Schedule that runs every minute
+        schedule = SyncSchedule.objects.create(
+            name="Every Minute Schedule",
+            is_active=True,
+            cron_expression="* * * * *",
+            sync_type="teachers"
+        )
+        
+        call_command('run_sync', scheduled=True)
+        
+        # Check that a job was triggered
+        self.assertEqual(SyncJob.objects.count(), 1)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.sync_type, 'teachers')
+        self.assertEqual(job.status, 'Pending')
+        
+        mock_run_background.assert_called_once_with(job.id)
+        
+        # Check that last_run was updated
+        schedule.refresh_from_db()
+        self.assertIsNotNone(schedule.last_run)
+
+    @patch('toddlecross.management.commands.run_sync.run_sync_job_background')
+    def test_scheduled_command_ignores_inactive(self, mock_run_background):
+        from django.core.management import call_command
+        SyncJob.objects.all().delete()
+        SyncSchedule.objects.all().delete()
+        
+        SyncSchedule.objects.create(
+            name="Inactive Schedule",
+            is_active=False,
+            cron_expression="* * * * *",
+            sync_type="students"
+        )
+        
+        call_command('run_sync', scheduled=True)
+        self.assertEqual(SyncJob.objects.count(), 0)
+        mock_run_background.assert_not_called()
+
+    @patch('toddlecross.management.commands.run_sync.run_sync_job_background')
+    @patch('django.utils.timezone.now')
+    def test_scheduled_command_ignores_not_due(self, mock_now, mock_run_background):
+        from django.core.management import call_command
+        import datetime
+        from django.utils import timezone
+        
+        SyncJob.objects.all().delete()
+        SyncSchedule.objects.all().delete()
+        
+        # Schedule that runs only at 2:00 AM
+        SyncSchedule.objects.create(
+            name="2 AM Schedule",
+            is_active=True,
+            cron_expression="0 2 * * *",
+            sync_type="both"
+        )
+        
+        # Mock time to 12:00 PM (noon)
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2026, 6, 27, 12, 0, 0))
+        
+        call_command('run_sync', scheduled=True)
+        self.assertEqual(SyncJob.objects.count(), 0)
+        mock_run_background.assert_not_called()
 
