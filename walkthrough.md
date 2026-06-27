@@ -1,40 +1,38 @@
-# Walkthrough - Batch 13: Dynamic Cron Scheduling in Django Admin
+# Walkthrough - Batch 14: Rich Webhook Alert Templates
 
-This walkthrough details the addition of database-driven `SyncSchedule` models, admin panel integration, and management CLI command schedule checks.
+This walkthrough details the addition of formatted success notifications alongside failures, capturing metrics parameters and execution timing details.
 
 ## Changes Made
 
-### 1. Dependencies (Issue #31)
-- Added `croniter>=2.0.0` inside [requirements.txt](file:///h:/My%20Drive/Toddlecross/requirements.txt) to parse standard cron expressions.
+### 1. Unified Webhook Alert Helper (Issue #32)
+- Implemented `send_webhook_notifications(job, error=None)` inside [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py):
+  - Calculates precise duration timings (comparing `job.start_time` and timezone clock).
+  - **Success Payload**:
+    - **Slack**: Sends a green emoji marked summary listing sync scope, durations, and counts (+created, ~updated, -deleted).
+    - **Discord**: Dispatches green embedded cards representing scopes, metrics fields, and duration parameters.
+  - **Failure Payload**:
+    - **Slack**: Sends a red emoji marked alert listing scope, error details, and log blocks.
+    - **Discord**: Dispatches red cards detailing error names, scopes, and logs code snippets.
 
-### 2. SyncSchedule DB Model (Issue #31)
-- Added `SyncSchedule` model and a custom `validate_cron_expression` validator in [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py).
-- Applied database migration `0003_syncschedule.py` adding the schedule model.
+### 2. Views Integration (Issue #32)
+- Updated `run_sync_job_background` inside [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py):
+  - Refactored completion block to run `send_webhook_notifications(job)`.
+  - Refactored exception handler block to execute `send_webhook_notifications(job, error=e)`.
 
-### 3. Django Admin Panel (Issue #31)
-- Custom-registered `SyncSchedule` inside [admin.py](file:///h:/My%20Drive/Toddlecross/toddlecross/admin.py):
-  - Displays name, cron string, sync scope, active status, and last trigger time.
-  - Computes and displays the next expected run timestamp dynamically using `croniter`.
-
-### 4. run_sync Management Command CLI (Issue #31)
-- Added a `--scheduled` boolean argument to [run_sync.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/run_sync.py).
-- When run with `--scheduled`, iterates through all active database schedules, calculates if any are due to execute at the current minute, and runs them sequentially.
-
-### 5. Unit Tests (Issue #31)
-- Appended unit tests inside [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
-  - `test_cron_expression_validator_valid` and `test_cron_expression_validator_invalid`: Checks expression validations.
-  - `test_scheduled_command_triggers_when_due`: Verifies active/due cron triggers and updates last run times.
-  - `test_scheduled_command_ignores_inactive` and `test_scheduled_command_ignores_not_due`: Verifies filter exclusions.
+### 3. Unit Tests (Issue #32)
+- Added success webhook trigger testing within `EdgeCaseIntegrationTests` in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
+  - `test_run_sync_command_success_dispatches_webhooks`: Verifies mock success notifications are dispatched to both domains.
+- Updated timeout warnings assertions (`test_run_sync_command_webhooks_graceful_on_timeout`) to verify corrected log details.
 
 ---
 
 ## Verification Results
 
 ### Local Unit Tests
-We executed the expanded unit test suite locally:
-- **Test Executions**: All **42 tests** passed successfully:
+We executed the complete unit tests locally:
+- **Test Executions**: All **43 tests** passed successfully:
   ```cmd
-  Ran 42 tests in 10.481s
+  Ran 43 tests in 11.133s
   OK
   ```
-- **Coverage**: Measured at **84%** overall.
+- **Coverage**: Measured at **85%** overall.

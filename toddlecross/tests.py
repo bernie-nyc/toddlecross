@@ -651,8 +651,8 @@ class EdgeCaseIntegrationTests(TestCase):
         # Verify SyncJob is marked as Failed.
         job = SyncJob.objects.first()
         self.assertEqual(job.status, 'Failed')
-        self.assertIn("Failed to dispatch Slack webhook alert", job.logs)
-        self.assertIn("Failed to dispatch Discord webhook alert", job.logs)
+        self.assertIn("Failed to dispatch Slack webhook notification", job.logs)
+        self.assertIn("Failed to dispatch Discord webhook notification", job.logs)
 
     @patch.object(SyncPipeline, 'sync_teachers')
     @patch.object(SyncPipeline, 'sync_students')
@@ -752,4 +752,40 @@ class EdgeCaseIntegrationTests(TestCase):
         call_command('run_sync', scheduled=True)
         self.assertEqual(SyncJob.objects.count(), 0)
         mock_run_background.assert_not_called()
+
+    @patch.object(SyncPipeline, 'sync_teachers')
+    @patch.object(SyncPipeline, 'sync_students')
+    @patch('requests.post')
+    @override_settings(
+        SLACK_WEBHOOK_URL='https://example.com/slack-webhook',
+        DISCORD_WEBHOOK_URL='https://example.com/discord-webhook'
+    )
+    def test_run_sync_command_success_dispatches_webhooks(self, mock_post, mock_students, mock_teachers):
+        """Test that the run_sync management command triggers Slack and Discord webhook success notifications."""
+        from django.core.management import call_command
+        
+        SyncJob.objects.all().delete()
+        mock_post.return_value = MagicMock(status_code=200)
+        
+        call_command('run_sync')
+        
+        # Verify SyncJob is marked as Success.
+        self.assertEqual(SyncJob.objects.count(), 1)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.status, 'Success')
+        self.assertIn("Slack info notification dispatched", job.logs)
+        self.assertIn("Discord info notification dispatched", job.logs)
+        
+        self.assertEqual(mock_post.call_count, 2)
+        
+        # Verify Slack success payload details
+        slack_call = mock_post.call_args_list[0]
+        self.assertEqual(slack_call[0][0], 'https://example.com/slack-webhook')
+        self.assertIn("completed successfully", slack_call[1]['json']['text'])
+        self.assertIn("Metrics:", slack_call[1]['json']['text'])
+        
+        # Verify Discord success payload details
+        discord_call = mock_post.call_args_list[1]
+        self.assertEqual(discord_call[0][0], 'https://example.com/discord-webhook')
+        self.assertIn("Completed Successfully", discord_call[1]['json']['embeds'][0]['title'])
 

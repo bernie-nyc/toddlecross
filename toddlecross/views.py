@@ -11,6 +11,83 @@ from django.core.mail import send_mail
 from .models import SyncJob
 from .engine.sync_pipeline import SyncPipeline
 
+# This helper function formats and sends success/failure alerts to Slack and Discord.
+def send_webhook_notifications(job, error=None):
+    slack_url = getattr(settings, 'SLACK_WEBHOOK_URL', '')
+    discord_url = getattr(settings, 'DISCORD_WEBHOOK_URL', '')
+    
+    if not slack_url and not discord_url:
+        return
+        
+    sync_type = getattr(job, 'sync_type', 'both')
+    created = getattr(job, 'created_count', 0)
+    updated = getattr(job, 'updated_count', 0)
+    deleted = getattr(job, 'deleted_count', 0)
+    
+    # Calculate duration
+    now = timezone.now()
+    duration = (now - job.start_time).total_seconds()
+    duration_str = f"{duration:.2f}s"
+    
+    if error is None:
+        status_emoji = "✅"
+        status_title = f"Data Sync Job #{job.id} Completed Successfully"
+        slack_text = (
+            f"✅ *[Toddlecross Notification]* Data Sync Job #{job.id} completed successfully!\n"
+            f"*Scope:* `{sync_type}`\n"
+            f"*Metrics:* `+{created}` created / `~{updated}` updated / `-{deleted}` deleted\n"
+            f"*Duration:* {duration_str}"
+        )
+        discord_desc = "The synchronization job completed without any errors."
+        discord_color = 3066993  # Green
+    else:
+        status_emoji = "🚨"
+        status_title = f"Data Sync Job #{job.id} Failed"
+        slack_text = (
+            f"🚨 *[Toddlecross Alert]* Data Sync Job #{job.id} failed!\n"
+            f"*Scope:* `{sync_type}`\n"
+            f"*Error:* `{error}`\n"
+            f"*Metrics:* `+{created}` created / `~{updated}` updated / `-{deleted}` deleted\n"
+            f"*Logs Snippet:*\n```{job.logs[:800]}```"
+        )
+        discord_desc = f"**Error:** `{error}`"
+        discord_color = 15158332  # Red
+
+    # Send Slack notification
+    if slack_url:
+        try:
+            payload = {"text": slack_text}
+            requests.post(slack_url, json=payload, timeout=10)
+            job.add_log(f"Sync progress: Slack {'warning' if error else 'info'} notification dispatched.")
+        except Exception as slack_err:
+            job.add_log(f"Sync warning: Failed to dispatch Slack webhook notification: {slack_err}")
+
+    # Send Discord notification
+    if discord_url:
+        try:
+            fields = [
+                {"name": "Scope", "value": f"`{sync_type}`", "inline": True},
+                {"name": "Metrics", "value": f"🟢 **+{created}** Created\n🟡 **~{updated}** Updated\n🔴 **-{deleted}** Deleted", "inline": True}
+            ]
+            if error is None:
+                fields.append({"name": "Duration", "value": f"`{duration_str}`", "inline": True})
+            else:
+                fields.append({"name": "Logs Snippet", "value": f"```\n{job.logs[:1000]}\n```", "inline": False})
+                
+            payload = {
+                "embeds": [{
+                    "title": f"{status_emoji} {status_title}",
+                    "description": discord_desc,
+                    "fields": fields,
+                    "color": discord_color
+                }]
+            }
+            requests.post(discord_url, json=payload, timeout=10)
+            job.add_log(f"Sync progress: Discord {'warning' if error else 'info'} notification dispatched.")
+        except Exception as discord_err:
+            job.add_log(f"Sync warning: Failed to dispatch Discord webhook notification: {discord_err}")
+
+
 # This background worker function runs the sync process inside a separate execution thread.
 # Running in a thread allows our web server to respond instantly to the user while the work happens.
 def run_sync_job_background(job_id):
@@ -41,6 +118,9 @@ def run_sync_job_background(job_id):
         # If no error happened, we mark the job status as Success.
         job.status = 'Success'
         job.add_log(f"Sync progress: Complete database synchronization success ({sync_type}).")
+        
+        # Send success webhook updates
+        send_webhook_notifications(job)
     except Exception as e:
         # If an error happens (like API timeout or incorrect keys), we record the failure.
         job.status = 'Failed'
@@ -66,33 +146,8 @@ def run_sync_job_background(job_id):
         except Exception as mail_err:
             job.add_log(f"Sync warning: Failed to dispatch failure email alert: {mail_err}")
 
-        # Send failure notification to Slack
-        slack_url = getattr(settings, 'SLACK_WEBHOOK_URL', '')
-        if slack_url:
-            try:
-                payload = {
-                    "text": f"🚨 *[Toddlecross Alert]* Data Sync Job #{job.id} failed!\n*Error:* `{e}`\n*Logs:*\n```{job.logs[:1000]}```"
-                }
-                requests.post(slack_url, json=payload, timeout=10)
-                job.add_log("Sync progress: Slack warning notification dispatched.")
-            except Exception as slack_err:
-                job.add_log(f"Sync warning: Failed to dispatch Slack webhook alert: {slack_err}")
-
-        # Send failure notification to Discord
-        discord_url = getattr(settings, 'DISCORD_WEBHOOK_URL', '')
-        if discord_url:
-            try:
-                payload = {
-                    "embeds": [{
-                        "title": f"🚨 [Toddlecross Alert] Data Sync Job #{job.id} Failed",
-                        "description": f"**Error:** `{e}`\n\n**Job Logs:**\n```{job.logs[:1500]}```",
-                        "color": 16711680
-                    }]
-                }
-                requests.post(discord_url, json=payload, timeout=10)
-                job.add_log("Sync progress: Discord warning notification dispatched.")
-            except Exception as discord_err:
-                job.add_log(f"Sync warning: Failed to dispatch Discord webhook alert: {discord_err}")
+        # Send failure webhook updates
+        send_webhook_notifications(job, error=e)
     finally:
         # We record the exact end time and save our changes.
         job.end_time = timezone.now()
