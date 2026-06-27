@@ -10,8 +10,8 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #10: Implement View-Gating Middleware/Decorator
 - **Description**: Secure all views within the `toddlecross` application, ensuring unauthenticated requests are redirected to the Google SSO / Sign-in page.
 - **Tasks**:
-  - [ ] Implement custom middleware or view decorators to check `request.user.is_authenticated`.
-  - [ ] Configure public route exemptions (such as LTI login, launch, and keyset endpoints, which must remain accessible to the public/Toddle).
+  - [x] Implement custom middleware or view decorators to check `request.user.is_authenticated`.
+  - [x] Configure public route exemptions (such as LTI login, launch, and keyset endpoints, which must remain accessible to the public/Toddle).
 - **Files**:
   - `toddlecross/middleware.py` [NEW]
   - `config/settings.py` [MODIFY]
@@ -20,8 +20,8 @@ This document serves as our offline Umbrella Issue tracking system, organizing t
 ### 🔹 Issue #11: Refine Login / Logout Glassmorphic UI
 - **Description**: Polish the user sign-in and sign-out interfaces to ensure a premium, modern feel.
 - **Tasks**:
-  - [ ] Review CSS transitions, loading feedback on the Google SSO button.
-  - [ ] Build a sleek Logout confirmation page.
+  - [x] Review CSS transitions, loading feedback on the Google SSO button.
+  - [x] Build a sleek Logout confirmation page.
 - **Files**:
   - `toddlecross/templates/toddlecross/login.html` [MODIFY]
   - `toddlecross/templates/toddlecross/logout.html` [NEW]
