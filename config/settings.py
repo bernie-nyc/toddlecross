@@ -251,6 +251,10 @@ SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
 # This ensures CSRF security cookies are only sent over secure HTTPS connections.
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+# Superuser initialization credentials
+SUPERUSER_USERNAME = os.getenv('SUPERUSER_USERNAME', 'admin')
+SUPERUSER_EMAIL = os.getenv('SUPERUSER_EMAIL', 'admin@example.com')
+SUPERUSER_PASSWORD = os.getenv('SUPERUSER_PASSWORD', 'adminpassword')
 
 
 # Email configurations for system failure alerts
