@@ -18,6 +18,17 @@ class SyncJob(models.Model):
         default='Pending'
     )
 
+    # The type of sync execution requested (for example: students, teachers, or both).
+    sync_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('students', 'Students Only'),
+            ('teachers', 'Teachers Only'),
+            ('both', 'Complete Sync'),
+        ],
+        default='both'
+    )
+
     # The date and time when this job started running.
     start_time = models.DateTimeField(auto_now_add=True)
 

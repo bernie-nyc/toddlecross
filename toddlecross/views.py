@@ -29,13 +29,18 @@ def run_sync_job_background(job_id):
     try:
         # We instantiate our mapping engine and pass the job object to handle logging.
         pipeline = SyncPipeline(sync_job=job)
-        # We start the synchronization process for students.
-        pipeline.sync_students()
-        # We start the synchronization process for teachers.
-        pipeline.sync_teachers()
+        sync_type = getattr(job, 'sync_type', 'both')
+        
+        if sync_type in ('students', 'both'):
+            # We start the synchronization process for students.
+            pipeline.sync_students()
+        if sync_type in ('teachers', 'both'):
+            # We start the synchronization process for teachers.
+            pipeline.sync_teachers()
+            
         # If no error happened, we mark the job status as Success.
         job.status = 'Success'
-        job.add_log("Sync progress: Complete database synchronization success.")
+        job.add_log(f"Sync progress: Complete database synchronization success ({sync_type}).")
     except Exception as e:
         # If an error happens (like API timeout or incorrect keys), we record the failure.
         job.status = 'Failed'
@@ -170,9 +175,22 @@ def trigger_sync_view(request):
         
     # We only accept POST requests to trigger execution.
     if request.method == 'POST':
+        import json
+        sync_type = 'both'
+        if request.body:
+            try:
+                body = json.loads(request.body)
+                sync_type = body.get('sync_type', 'both')
+            except Exception:
+                pass
+        
+        # Validate sync_type
+        if sync_type not in ('students', 'teachers', 'both'):
+            sync_type = 'both'
+
         # We pre create the SyncJob database record to get a unique job ID.
-        job = SyncJob.objects.create(status='Pending')
-        job.add_log("Sync progress: Job initialized. Starting background thread...")
+        job = SyncJob.objects.create(status='Pending', sync_type=sync_type)
+        job.add_log(f"Sync progress: Job ({sync_type}) initialized. Starting background thread...")
         
         # We start our background thread and specify run_sync_job_background as the target.
         thread = threading.Thread(target=run_sync_job_background, args=(job.id,))

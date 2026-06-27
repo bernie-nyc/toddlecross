@@ -1,27 +1,34 @@
-# Walkthrough - Batch 10: Teacher Sync Pipeline Expansion
+# Walkthrough - Batch 11: Granular Dashboard Sync Controls
 
-This walkthrough details the addition of teacher synchronization logic, integrating it into the automatic run execution sequence alongside students.
+This walkthrough details the addition of granular controls allowing administrators to run Student-only, Teacher-only, or Complete synchronization runs.
 
 ## Changes Made
 
-### 1. Teacher Sync Engine (Issue #28)
-- Created the `map_teacher(self, veracross_teacher)` schema-matching helper in [sync_pipeline.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/sync_pipeline.py).
-- Implemented `sync_teachers(self)` running:
-  - Retrieval of teacher profiles from Veracross client.
-  - Verification and mapping of teacher attributes (name, email, unique sis_id).
-  - Graphql query lookup (`GetExistingTeachers`) of current records on Toddle.
-  - Difference calculations (create, update, delete lists).
-  - Toddle mutations execution (`CreateTeacher`, `UpdateTeacher`, `DeleteTeacher`).
-- Updated the pipeline metric updates to accumulate sums (using addition operators) rather than overwriting fields.
+### 1. Database Schema Migration (Issue #29)
+- Added `sync_type` CharField to `SyncJob` inside [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py) with options `'students'`, `'teachers'`, and `'both'`.
+- Successfully generated and applied Django migration `0002_syncjob_sync_type.py`.
 
-### 2. views.py Background Sync (Issue #28)
-- Updated `run_sync_job_background` in [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to invoke `pipeline.sync_teachers()` directly after student updates complete.
+### 2. Views and Trigger Integration (Issue #29)
+- Updated `run_sync_job_background` in [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to read `job.sync_type` and run corresponding mappings:
+  - `students` -> `pipeline.sync_students()` only
+  - `teachers` -> `pipeline.sync_teachers()` only
+  - `both` -> runs both pipelines sequentially
+- Updated `trigger_sync_view` to read `sync_type` parameters from JSON body POST requests and register it on the created database record.
 
-### 3. Expanded Test Suite & Mock Adjustments (Issue #28)
-- Appended two unit test methods inside `SyncPipelineTests` in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
-  - `test_map_teacher`: Checks key translation and formatting alignment.
-  - `test_sync_teachers_workflow`: Mock-verifies query and mutation sequence.
-- Updated view and shell command checks (`test_run_sync_job_background_success`, `test_run_sync_job_background_failure`, `test_run_sync_command_success`) to patch both `sync_students` and `sync_teachers`.
+### 3. Command Line Interface (Issue #29)
+- Added a `--type` argument to `run_sync.py` command inside [run_sync.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/run_sync.py) specifying `students`, `teachers`, or `both`.
+
+### 4. Admin Dashboard UI Enhancements (Issue #29)
+- Updated the Django template [dashboard.html](file:///h:/My%20Drive/Toddlecross/toddlecross/templates/toddlecross/dashboard.html):
+  - Replaced the single run button with a button group enabling "Sync All Data", "Sync Students", and "Sync Teachers".
+  - Configured JavaScript triggers to pass the selected action value in the JSON payload body.
+  - Implemented a "Scope" column in the Execution Run History table displaying the job type.
+
+### 5. Test Suite Expansion (Issue #29)
+- Appended unit test methods inside [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
+  - `test_trigger_sync_view_custom_type`: Verifies POST payloads create `SyncJob` with correct scope fields.
+  - `test_run_sync_job_background_students_only` and `test_run_sync_job_background_teachers_only`: Verify background thread invokes only the expected sync steps.
+  - `test_run_sync_command_custom_type`: Verifies CLI `--type` execution.
 
 ---
 
@@ -29,9 +36,9 @@ This walkthrough details the addition of teacher synchronization logic, integrat
 
 ### Local Unit Tests & Coverage Check
 We ran the complete unit tests locally:
-- **Test Executions**: All **33 tests** passed successfully:
+- **Test Executions**: All **37 tests** passed successfully:
   ```cmd
-  Ran 33 tests in 9.439s
+  Ran 37 tests in 12.122s
   OK
   ```
 - **Coverage Metrics**: Total application coverage measured at **83%**:
@@ -43,15 +50,10 @@ We ran the complete unit tests locally:
   toddlecross\engine\toddle_client.py              27     10    63%
   toddlecross\engine\veracross_client.py           33      1    97%
   toddlecross\lti_views.py                         65      5    92%
-  toddlecross\management\commands\run_sync.py      11      0   100%
-  toddlecross\models.py                            15      1    93%
+  toddlecross\management\commands\run_sync.py      17      2    88%
+  toddlecross\models.py                            16      1    94%
   toddlecross\urls.py                               5      0   100%
-  toddlecross\views.py                            103      9    91%
+  toddlecross\views.py                            116     10    91%
   ---------------------------------------------------------------------------
-  TOTAL                                           403     69    83%
+  TOTAL                                           423     72    83%
   ```
-
-### GitHub Actions CI/CD Verification
-The pipeline ran and passed on GitHub:
-- **Action Run URL**: [Run 28292364740](https://github.com/bernie-nyc/toddlecross/actions/runs/28292364740)
-- **Job Outcome**: The `test` job passed successfully in `40s`.

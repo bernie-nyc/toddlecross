@@ -125,12 +125,16 @@
         <div class="card-content">
             <p>Ready to run jobs, pipelines, and integrations. You can edit Python files in the <code>toddlecross/</code> directory to define your processing tasks.</p>
             {% if user.is_staff %}
-                <div class="action-btn-group">
-                    <button id="run-sync-btn" class="btn btn-primary" onclick="startDataSync()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Run Data Job</button>
+                <div class="action-btn-group" style="flex-wrap: wrap; gap: 8px;">
+                    <button id="run-sync-btn-both" class="btn btn-primary" onclick="startDataSync('both')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Sync All Data</button>
+                    <button id="run-sync-btn-students" class="btn btn-secondary" onclick="startDataSync('students')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Sync Students</button>
+                    <button id="run-sync-btn-teachers" class="btn btn-secondary" onclick="startDataSync('teachers')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Sync Teachers</button>
                 </div>
             {% else %}
-                <div class="action-btn-group">
-                    <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; opacity: 0.5;" disabled>Run Data Job</button>
+                <div class="action-btn-group" style="flex-wrap: wrap; gap: 8px;">
+                    <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; opacity: 0.5;" disabled>Sync All Data</button>
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; opacity: 0.5;" disabled>Sync Students</button>
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; opacity: 0.5;" disabled>Sync Teachers</button>
                 </div>
             {% endif %}
         </div>
@@ -240,6 +244,7 @@
                         <tr style="border-bottom: 1px solid var(--border-color); background-color: rgba(11, 15, 25, 0.6);">
                             <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Run ID</th>
                             <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Start Time</th>
+                            <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Scope</th>
                             <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Status</th>
                             <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500;">Metrics (Add / Mod / Del)</th>
                             <th style="padding: 0.75rem 1rem; color: var(--text-muted); font-weight: 500; text-align: right;">Action</th>
@@ -250,6 +255,15 @@
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background-color 0.2s;">
                                 <td style="padding: 0.75rem 1rem; color: var(--text-main); font-weight: 600;">#{{ job.id }}</td>
                                 <td style="padding: 0.75rem 1rem; color: var(--text-muted);">{{ job.start_time|date:"Y-m-d H:i:s" }}</td>
+                                <td style="padding: 0.75rem 1rem;">
+                                    {% if job.sync_type == 'students' %}
+                                        <span style="font-size: 0.8rem; color: #818cf8; font-weight: 500;">Students</span>
+                                    {% elif job.sync_type == 'teachers' %}
+                                        <span style="font-size: 0.8rem; color: #34d399; font-weight: 500;">Teachers</span>
+                                    {% else %}
+                                        <span style="font-size: 0.8rem; color: #a5b4fc; font-weight: 500;">Complete</span>
+                                    {% endif %}
+                                </td>
                                 <td style="padding: 0.75rem 1rem;">
                                     {% if job.status == 'Success' %}
                                         <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; background-color: rgba(16, 185, 129, 0.15); color: #34d399;">Success</span>
@@ -272,7 +286,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No sync job history found.</td>
+                                <td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No sync job history found.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -283,13 +297,21 @@
         <script>
             let syncInterval = null;
 
-            function startDataSync() {
-                const btn = document.getElementById('run-sync-btn');
+            function startDataSync(syncType = 'both') {
+                const btnBoth = document.getElementById('run-sync-btn-both');
+                const btnStudents = document.getElementById('run-sync-btn-students');
+                const btnTeachers = document.getElementById('run-sync-btn-teachers');
                 const logConsole = document.getElementById('sync-log-console');
                 const logSection = document.getElementById('console-section');
                 
-                btn.disabled = true;
-                btn.innerText = 'Running Sync...';
+                const disableAll = (state) => {
+                    if (btnBoth) btnBoth.disabled = state;
+                    if (btnStudents) btnStudents.disabled = state;
+                    if (btnTeachers) btnTeachers.disabled = state;
+                };
+                
+                disableAll(true);
+                if (btnBoth) btnBoth.innerText = 'Syncing...';
                 
                 logConsole.innerText = 'Initializing connection to server...\n';
                 logSection.style.display = 'block';
@@ -299,7 +321,8 @@
                     headers: {
                         'X-CSRFToken': '{{ csrf_token }}',
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ sync_type: syncType })
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -321,15 +344,23 @@
                 })
                 .catch(error => {
                     logConsole.innerText += `\nError: ${error.message}\n`;
-                    btn.disabled = false;
-                    btn.innerText = 'Run Data Job';
+                    disableAll(false);
+                    if (btnBoth) btnBoth.innerText = 'Sync All Data';
                 });
             }
 
             function pollSyncStatus(jobId) {
                 const url = `/sync/status/${jobId}/`;
-                const btn = document.getElementById('run-sync-btn');
+                const btnBoth = document.getElementById('run-sync-btn-both');
+                const btnStudents = document.getElementById('run-sync-btn-students');
+                const btnTeachers = document.getElementById('run-sync-btn-teachers');
                 const logConsole = document.getElementById('sync-log-console');
+                
+                const disableAll = (state) => {
+                    if (btnBoth) btnBoth.disabled = state;
+                    if (btnStudents) btnStudents.disabled = state;
+                    if (btnTeachers) btnTeachers.disabled = state;
+                };
                 
                 fetch(url)
                 .then(response => response.json())
@@ -339,8 +370,8 @@
                     
                     if (data.status === 'Success' || data.status === 'Failed') {
                         clearInterval(syncInterval);
-                        btn.disabled = false;
-                        btn.innerText = 'Run Data Job';
+                        disableAll(false);
+                        if (btnBoth) btnBoth.innerText = 'Sync All Data';
                         
                         setTimeout(() => {
                             window.location.reload();
@@ -350,8 +381,8 @@
                 .catch(error => {
                     clearInterval(syncInterval);
                     logConsole.innerText += `\nConnection lost: ${error.message}\n`;
-                    btn.disabled = false;
-                    btn.innerText = 'Run Data Job';
+                    disableAll(false);
+                    if (btnBoth) btnBoth.innerText = 'Sync All Data';
                 });
             }
 

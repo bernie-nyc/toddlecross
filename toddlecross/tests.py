@@ -410,6 +410,19 @@ class SyncJobTests(TestCase):
         job = SyncJob.objects.first()
         self.assertEqual(job.status, 'Pending')
 
+    @patch('threading.Thread')
+    def test_trigger_sync_view_custom_type(self, mock_thread):
+        self.client.force_login(self.staff_user)
+        # We trigger a sync specifying teachers type
+        response = self.client.post(
+            reverse('toddlecross:trigger_sync'),
+            data='{"sync_type": "teachers"}',
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.sync_type, 'teachers')
+
     def test_sync_status_view_permissions(self):
         job = SyncJob.objects.create(status='Pending')
         
@@ -454,6 +467,22 @@ class SyncJobTests(TestCase):
         self.assertEqual(db_job.status, 'Failed')
         self.assertIn("Process stopped due to error: API connection lost", db_job.logs)
         self.assertIsNotNone(db_job.end_time)
+
+    @patch.object(SyncPipeline, 'sync_teachers')
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_job_background_students_only(self, mock_students, mock_teachers):
+        job = SyncJob.objects.create(status='Pending', sync_type='students')
+        run_sync_job_background(job.id)
+        mock_students.assert_called_once()
+        mock_teachers.assert_not_called()
+
+    @patch.object(SyncPipeline, 'sync_teachers')
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_job_background_teachers_only(self, mock_students, mock_teachers):
+        job = SyncJob.objects.create(status='Pending', sync_type='teachers')
+        run_sync_job_background(job.id)
+        mock_teachers.assert_called_once()
+        mock_students.assert_not_called()
 
 
 class EdgeCaseIntegrationTests(TestCase):
@@ -623,3 +652,18 @@ class EdgeCaseIntegrationTests(TestCase):
         self.assertEqual(job.status, 'Failed')
         self.assertIn("Failed to dispatch Slack webhook alert", job.logs)
         self.assertIn("Failed to dispatch Discord webhook alert", job.logs)
+
+    @patch.object(SyncPipeline, 'sync_teachers')
+    @patch.object(SyncPipeline, 'sync_students')
+    def test_run_sync_command_custom_type(self, mock_students, mock_teachers):
+        """Test run_sync command with custom type argument."""
+        from django.core.management import call_command
+        SyncJob.objects.all().delete()
+        
+        call_command('run_sync', type='teachers')
+        
+        job = SyncJob.objects.first()
+        self.assertEqual(job.sync_type, 'teachers')
+        mock_teachers.assert_called_once()
+        mock_students.assert_not_called()
+
