@@ -324,6 +324,40 @@ class SyncPipelineTests(TestCase):
         self.assertEqual(results['updated_count'], 0)
         self.assertEqual(results['deleted_count'], 0)
 
+    def test_map_teacher(self):
+        raw_teacher = {
+            'teacher_id': '2001',
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'email': 'JANE@example.com '
+        }
+        mapped = self.pipeline.map_teacher(raw_teacher)
+        self.assertEqual(mapped, {
+            'sis_id': '2001',
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'email': 'jane@example.com'
+        })
+
+    @patch.object(VeracrossClient, 'get_teachers')
+    @patch.object(ToddleClient, 'execute_graphql')
+    def test_sync_teachers_workflow(self, mock_graphql, mock_veracross_teachers):
+        # We mock Veracross returning one new teacher.
+        mock_veracross_teachers.return_value = [
+            {'teacher_id': 888, 'first_name': 'Sarah', 'last_name': 'Smith', 'email': 'sarah@example.com'}
+        ]
+        
+        # We mock Toddle graphql query returning empty list first, then successful mutation responses.
+        mock_graphql.side_effect = [
+            {'data': {'teachers': []}}, # GetExistingTeachers response
+            {'data': {'createTeacher': {'sis_id': '888'}}} # CreateTeacher response
+        ]
+        
+        results = self.pipeline.sync_teachers()
+        self.assertEqual(results['created_count'], 1)
+        self.assertEqual(results['updated_count'], 0)
+        self.assertEqual(results['deleted_count'], 0)
+
 
 class SyncJobTests(TestCase):
     def setUp(self):
@@ -392,8 +426,9 @@ class SyncJobTests(TestCase):
         self.assertEqual(data['status'], 'Pending')
         self.assertEqual(data['id'], job.id)
 
+    @patch.object(SyncPipeline, 'sync_teachers')
     @patch.object(SyncPipeline, 'sync_students')
-    def test_run_sync_job_background_success(self, mock_sync):
+    def test_run_sync_job_background_success(self, mock_students, mock_teachers):
         job = SyncJob.objects.create(status='Pending')
         
         # Run the background helper synchronously in our test.
@@ -405,10 +440,11 @@ class SyncJobTests(TestCase):
         self.assertIn("Complete database synchronization success", db_job.logs)
         self.assertIsNotNone(db_job.end_time)
 
+    @patch.object(SyncPipeline, 'sync_teachers')
     @patch.object(SyncPipeline, 'sync_students')
-    def test_run_sync_job_background_failure(self, mock_sync):
+    def test_run_sync_job_background_failure(self, mock_students, mock_teachers):
         # We simulate a sync crash.
-        mock_sync.side_effect = Exception("API connection lost")
+        mock_students.side_effect = Exception("API connection lost")
         job = SyncJob.objects.create(status='Pending')
         
         run_sync_job_background(job.id)
@@ -477,8 +513,9 @@ class EdgeCaseIntegrationTests(TestCase):
         self.assertEqual(db_job.status, 'Failed')
         self.assertIn("Process stopped due to error: Invalid input data encountered", db_job.logs)
 
+    @patch.object(SyncPipeline, 'sync_teachers')
     @patch.object(SyncPipeline, 'sync_students')
-    def test_run_sync_command_success(self, mock_sync):
+    def test_run_sync_command_success(self, mock_students, mock_teachers):
         """Test that the run_sync management command executes successfully and logs to database."""
         from django.core.management import call_command
         

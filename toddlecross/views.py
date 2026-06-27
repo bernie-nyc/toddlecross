@@ -31,6 +31,8 @@ def run_sync_job_background(job_id):
         pipeline = SyncPipeline(sync_job=job)
         # We start the synchronization process for students.
         pipeline.sync_students()
+        # We start the synchronization process for teachers.
+        pipeline.sync_teachers()
         # If no error happened, we mark the job status as Success.
         job.status = 'Success'
         job.add_log("Sync progress: Complete database synchronization success.")
