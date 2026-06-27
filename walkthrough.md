@@ -1,53 +1,57 @@
-# Walkthrough - Batch 9: Multi-Channel Alerts
+# Walkthrough - Batch 10: Teacher Sync Pipeline Expansion
 
-This walkthrough details the integration of Slack and Discord webhooks to alert administrators upon synchronization job failures.
+This walkthrough details the addition of teacher synchronization logic, integrating it into the automatic run execution sequence alongside students.
 
 ## Changes Made
 
-### 1. Webhook Configuration (Issue #27)
-- Added `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` inside [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py) to read credentials safely from environment variables.
+### 1. Teacher Sync Engine (Issue #28)
+- Created the `map_teacher(self, veracross_teacher)` schema-matching helper in [sync_pipeline.py](file:///h:/My%20Drive/Toddlecross/toddlecross/engine/sync_pipeline.py).
+- Implemented `sync_teachers(self)` running:
+  - Retrieval of teacher profiles from Veracross client.
+  - Verification and mapping of teacher attributes (name, email, unique sis_id).
+  - Graphql query lookup (`GetExistingTeachers`) of current records on Toddle.
+  - Difference calculations (create, update, delete lists).
+  - Toddle mutations execution (`CreateTeacher`, `UpdateTeacher`, `DeleteTeacher`).
+- Updated the pipeline metric updates to accumulate sums (using addition operators) rather than overwriting fields.
 
-### 2. Multi-Channel Webhook Triggers (Issue #27)
-- Updated `run_sync_job_background` within [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to send HTTP POST requests:
-  - **Slack**: Dispatches rich markdown text alerting that a job failed, referencing the sync job ID, error name, and diagnostic log details.
-  - **Discord**: Dispatches a colored embed object targeting Discord webhook formatting rules, complete with error trace and log snippets.
-- Wrapped each dispatcher call in its own try-except handler to ensure that network errors or timeout outages do not prevent job finalization or mask database sync logs.
+### 2. views.py Background Sync (Issue #28)
+- Updated `run_sync_job_background` in [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to invoke `pipeline.sync_teachers()` directly after student updates complete.
 
-### 3. Unit Tests (Issue #27)
-- Appended unit test methods to class `EdgeCaseIntegrationTests` in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
-  - `test_run_sync_command_failure_dispatches_webhooks`: Verifies mock POST payloads are sent to Slack and Discord with the correct content structures.
-  - `test_run_sync_command_webhooks_graceful_on_timeout`: Verifies that request connection timeouts are caught safely, logging a warning record inside the `SyncJob` instead of raising uncaught runtime errors.
-- Adjusted mock target URLs to generic `example.com` values to prevent triggering GitHub push protection scanning rules.
+### 3. Expanded Test Suite & Mock Adjustments (Issue #28)
+- Appended two unit test methods inside `SyncPipelineTests` in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
+  - `test_map_teacher`: Checks key translation and formatting alignment.
+  - `test_sync_teachers_workflow`: Mock-verifies query and mutation sequence.
+- Updated view and shell command checks (`test_run_sync_job_background_success`, `test_run_sync_job_background_failure`, `test_run_sync_command_success`) to patch both `sync_students` and `sync_teachers`.
 
 ---
 
 ## Verification Results
 
 ### Local Unit Tests & Coverage Check
-We ran the unit tests under coverage locally:
-- **Test Executions**: All **31 tests** passed successfully:
+We ran the complete unit tests locally:
+- **Test Executions**: All **33 tests** passed successfully:
   ```cmd
-  Ran 31 tests in 9.206s
+  Ran 33 tests in 9.439s
   OK
   ```
-- **Coverage Metrics**: Total application coverage measured at **86%**:
+- **Coverage Metrics**: Total application coverage measured at **83%**:
   ```cmd
   Name                                          Stmts   Miss  Cover
   ---------------------------------------------------------------------------
   toddlecross\__init__.py                           0      0   100%
-  toddlecross\engine\sync_pipeline.py              90     23    74%
+  toddlecross\engine\sync_pipeline.py             144     43    70%
   toddlecross\engine\toddle_client.py              27     10    63%
   toddlecross\engine\veracross_client.py           33      1    97%
   toddlecross\lti_views.py                         65      5    92%
   toddlecross\management\commands\run_sync.py      11      0   100%
   toddlecross\models.py                            15      1    93%
   toddlecross\urls.py                               5      0   100%
-  toddlecross\views.py                            102      9    91%
+  toddlecross\views.py                            103      9    91%
   ---------------------------------------------------------------------------
-  TOTAL                                           348     49    86%
+  TOTAL                                           403     69    83%
   ```
 
 ### GitHub Actions CI/CD Verification
-The updated test suite ran and passed successfully on GitHub:
-- **Action Run URL**: [Run 28273746676](https://github.com/bernie-nyc/toddlecross/actions/runs/28273746676)
-- **Job Outcome**: The `test` job passed successfully in `23s`.
+The pipeline ran and passed on GitHub:
+- **Action Run URL**: [Run 28292364740](https://github.com/bernie-nyc/toddlecross/actions/runs/28292364740)
+- **Job Outcome**: The `test` job passed successfully in `40s`.
