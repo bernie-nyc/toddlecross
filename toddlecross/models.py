@@ -1,4 +1,7 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from croniter import croniter
+
 
 # This model stores the history and logs of each sync job run.
 # It helps administrators monitor past executions and check for errors.
@@ -57,10 +60,6 @@ class SyncJob(models.Model):
     # This method defines how a SyncJob is printed as a string.
     def __str__(self):
         return f"Sync Job #{self.id} ({self.status})"
-
-
-from django.core.exceptions import ValidationError
-from croniter import croniter
 
 def validate_cron_expression(value):
     try:

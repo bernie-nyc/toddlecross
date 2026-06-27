@@ -684,7 +684,6 @@ class EdgeCaseIntegrationTests(TestCase):
     @patch('toddlecross.management.commands.run_sync.run_sync_job_background')
     def test_scheduled_command_triggers_when_due(self, mock_run_background):
         from django.core.management import call_command
-        from django.utils import timezone
         
         SyncJob.objects.all().delete()
         SyncSchedule.objects.all().delete()

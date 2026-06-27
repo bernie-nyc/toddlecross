@@ -1,7 +1,5 @@
-import os
-import json
 from django.conf import settings
-from django.http import JsonResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login

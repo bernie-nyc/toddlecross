@@ -1,38 +1,34 @@
-# Walkthrough - Batch 14: Rich Webhook Alert Templates
+# Walkthrough - Batch 15: CI/CD Code Quality Linting (Ruff)
 
-This walkthrough details the addition of formatted success notifications alongside failures, capturing metrics parameters and execution timing details.
+This walkthrough details the addition of automated static code analysis checks using Ruff inside dependencies, codebases, and the GHA workflow.
 
 ## Changes Made
 
-### 1. Unified Webhook Alert Helper (Issue #32)
-- Implemented `send_webhook_notifications(job, error=None)` inside [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py):
-  - Calculates precise duration timings (comparing `job.start_time` and timezone clock).
-  - **Success Payload**:
-    - **Slack**: Sends a green emoji marked summary listing sync scope, durations, and counts (+created, ~updated, -deleted).
-    - **Discord**: Dispatches green embedded cards representing scopes, metrics fields, and duration parameters.
-  - **Failure Payload**:
-    - **Slack**: Sends a red emoji marked alert listing scope, error details, and log blocks.
-    - **Discord**: Dispatches red cards detailing error names, scopes, and logs code snippets.
+### 1. Dependencies (Issue #33)
+- Added `ruff>=0.3.0` to [requirements.txt](file:///h:/My%20Drive/Toddlecross/requirements.txt) to verify standard Python syntax styling, formatting, and PEP 8 guidelines.
 
-### 2. Views Integration (Issue #32)
-- Updated `run_sync_job_background` inside [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py):
-  - Refactored completion block to run `send_webhook_notifications(job)`.
-  - Refactored exception handler block to execute `send_webhook_notifications(job, error=e)`.
+### 2. Codebase Linting Resolutions (Issue #33)
+- Executed local lint runs and resolved all 8 violations:
+  - Removed 6 unused imports in views, commands, key generation scripts, and test suites.
+  - Re-positioned `ValidationError` and `croniter` imports to the top of [models.py](file:///h:/My%20Drive/Toddlecross/toddlecross/models.py) to meet Python's E402 standard.
 
-### 3. Unit Tests (Issue #32)
-- Added success webhook trigger testing within `EdgeCaseIntegrationTests` in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
-  - `test_run_sync_command_success_dispatches_webhooks`: Verifies mock success notifications are dispatched to both domains.
-- Updated timeout warnings assertions (`test_run_sync_command_webhooks_graceful_on_timeout`) to verify corrected log details.
+### 3. GitHub Actions Pipeline (Issue #33)
+- Configured a new job step inside [.github/workflows/ci.yml](file:///h:/My%20Drive/Toddlecross/.github/workflows/ci.yml):
+  ```yaml
+  - name: Run Ruff Lint Check
+    run: |
+      ruff check .
+  ```
+  - This ensures that code style quality validations are enforced automatically on every commit push.
 
 ---
 
 ## Verification Results
 
-### Local Unit Tests
-We executed the complete unit tests locally:
-- **Test Executions**: All **43 tests** passed successfully:
+### Local Ruff & Tests Check
+- **Lint Checks**: Running `ruff check .` outputs `All checks passed!`.
+- **Unit Tests**: All **43 unit tests** passed successfully:
   ```cmd
-  Ran 43 tests in 11.133s
+  Ran 43 tests in 11.243s
   OK
   ```
-- **Coverage**: Measured at **85%** overall.

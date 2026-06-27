@@ -1,6 +1,6 @@
-# Task List - Batch 14: Rich Webhook Alert Templates
+# Task List - Batch 15: CI/CD Code Quality Linting (Ruff)
 
-- [x] Implement `send_webhook_notifications` helper inside `toddlecross/views.py`
-- [x] Update `run_sync_job_background` success and failure blocks inside `toddlecross/views.py`
-- [x] Implement and verify unit tests for success and failure webhook dispatches
+- [x] Add `ruff` to `requirements.txt` and install it in virtualenv
+- [x] Run Ruff checks locally and fix any formatting or syntax violations
+- [x] Configure Ruff check step inside `.github/workflows/ci.yml`
 - [x] Verify test suite and local/remote CI pipelines pass successfully
