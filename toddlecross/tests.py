@@ -520,3 +520,69 @@ class EdgeCaseIntegrationTests(TestCase):
         self.assertIn("Data Sync Job", email.subject)
         self.assertIn("Sync execution timeout", email.body)
         self.assertIn("admin@example.com", email.to)
+
+    @patch.object(SyncPipeline, 'sync_students')
+    @patch('requests.post')
+    @override_settings(
+        SLACK_WEBHOOK_URL='https://example.com/slack-webhook',
+        DISCORD_WEBHOOK_URL='https://example.com/discord-webhook'
+    )
+    def test_run_sync_command_failure_dispatches_webhooks(self, mock_post, mock_sync):
+        """Test that the run_sync management command triggers Slack and Discord webhook notifications on failure."""
+        from django.core.management import call_command
+        
+        SyncJob.objects.all().delete()
+        
+        # We trigger a ValueError failure.
+        mock_sync.side_effect = ValueError("Sync webhook trigger test")
+        
+        # Mock requests.post success
+        mock_post.return_value = MagicMock(status_code=200)
+        
+        call_command('run_sync')
+        
+        # Verify SyncJob is marked as Failed.
+        self.assertEqual(SyncJob.objects.count(), 1)
+        job = SyncJob.objects.first()
+        self.assertEqual(job.status, 'Failed')
+        self.assertIn("Sync webhook trigger test", job.logs)
+        self.assertIn("Slack warning notification dispatched", job.logs)
+        self.assertIn("Discord warning notification dispatched", job.logs)
+        
+        self.assertEqual(mock_post.call_count, 2)
+        
+        # Verify Slack payload details
+        slack_call = mock_post.call_args_list[0]
+        self.assertEqual(slack_call[0][0], 'https://example.com/slack-webhook')
+        self.assertIn("failed", slack_call[1]['json']['text'])
+        self.assertIn("Sync webhook trigger test", slack_call[1]['json']['text'])
+        
+        # Verify Discord payload details
+        discord_call = mock_post.call_args_list[1]
+        self.assertEqual(discord_call[0][0], 'https://example.com/discord-webhook')
+        self.assertIn("Failed", discord_call[1]['json']['embeds'][0]['title'])
+        self.assertIn("Sync webhook trigger test", discord_call[1]['json']['embeds'][0]['description'])
+
+    @patch.object(SyncPipeline, 'sync_students')
+    @patch('requests.post')
+    @override_settings(
+        SLACK_WEBHOOK_URL='https://example.com/slack-webhook',
+        DISCORD_WEBHOOK_URL='https://example.com/discord-webhook'
+    )
+    def test_run_sync_command_webhooks_graceful_on_timeout(self, mock_post, mock_sync):
+        """Test that webhooks failing due to timeouts are handled gracefully without blocking execution flow."""
+        from django.core.management import call_command
+        
+        SyncJob.objects.all().delete()
+        mock_sync.side_effect = ValueError("Sync webhook error tolerance test")
+        
+        # Mock requests.post raising Timeout exception
+        mock_post.side_effect = requests.exceptions.Timeout("Connection timed out")
+        
+        call_command('run_sync')
+        
+        # Verify SyncJob is marked as Failed.
+        job = SyncJob.objects.first()
+        self.assertEqual(job.status, 'Failed')
+        self.assertIn("Failed to dispatch Slack webhook alert", job.logs)
+        self.assertIn("Failed to dispatch Discord webhook alert", job.logs)

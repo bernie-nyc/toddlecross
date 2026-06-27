@@ -263,3 +263,7 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@toddlecross.com')
 ALERT_EMAIL = os.getenv('ALERT_EMAIL', SUPERUSER_EMAIL)
+
+# Webhook URLs for system failure alert integrations
+SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL', '')
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL', '')

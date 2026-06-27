@@ -1,4 +1,5 @@
 import threading
+import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, login_not_required
 from django.contrib.auth.models import User
@@ -57,6 +58,34 @@ def run_sync_job_background(job_id):
             job.add_log("Sync progress: Failure notification email dispatched to administrator.")
         except Exception as mail_err:
             job.add_log(f"Sync warning: Failed to dispatch failure email alert: {mail_err}")
+
+        # Send failure notification to Slack
+        slack_url = getattr(settings, 'SLACK_WEBHOOK_URL', '')
+        if slack_url:
+            try:
+                payload = {
+                    "text": f"🚨 *[Toddlecross Alert]* Data Sync Job #{job.id} failed!\n*Error:* `{e}`\n*Logs:*\n```{job.logs[:1000]}```"
+                }
+                requests.post(slack_url, json=payload, timeout=10)
+                job.add_log("Sync progress: Slack warning notification dispatched.")
+            except Exception as slack_err:
+                job.add_log(f"Sync warning: Failed to dispatch Slack webhook alert: {slack_err}")
+
+        # Send failure notification to Discord
+        discord_url = getattr(settings, 'DISCORD_WEBHOOK_URL', '')
+        if discord_url:
+            try:
+                payload = {
+                    "embeds": [{
+                        "title": f"🚨 [Toddlecross Alert] Data Sync Job #{job.id} Failed",
+                        "description": f"**Error:** `{e}`\n\n**Job Logs:**\n```{job.logs[:1500]}```",
+                        "color": 16711680
+                    }]
+                }
+                requests.post(discord_url, json=payload, timeout=10)
+                job.add_log("Sync progress: Discord warning notification dispatched.")
+            except Exception as discord_err:
+                job.add_log(f"Sync warning: Failed to dispatch Discord webhook alert: {discord_err}")
     finally:
         # We record the exact end time and save our changes.
         job.end_time = timezone.now()
