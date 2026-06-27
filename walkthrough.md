@@ -1,22 +1,23 @@
-# Walkthrough - Batch 8: Automated Scheduling & Failure Alerts
+# Walkthrough - Batch 9: Multi-Channel Alerts
 
-This walkthrough details the addition of a custom management command for cron execution and SMTP email alerts for sync job failures.
+This walkthrough details the integration of Slack and Discord webhooks to alert administrators upon synchronization job failures.
 
 ## Changes Made
 
-### 1. SMTP Email Configurations (Issue #27)
-- Added SMTP settings in [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py) to read credentials from environment variables (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, etc.), with fallbacks to a local dev setup.
-- Established `ALERT_EMAIL` configuration to target the site superuser.
+### 1. Webhook Configuration (Issue #27)
+- Added `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` inside [settings.py](file:///h:/My%20Drive/Toddlecross/config/settings.py) to read credentials safely from environment variables.
 
-### 2. Custom run_sync Command (Issue #26)
-- Created the custom Django management command [run_sync.py](file:///h:/My%20Drive/Toddlecross/toddlecross/management/commands/run_sync.py) under `toddlecross/management/commands/`.
-- This command enables running the sync pipeline from the host command line or scheduler (e.g. system cron), synchronously outputting job creation and final statuses.
-- Creates and updates `SyncJob` execution metrics records in the database identically to the frontend dashboard.
+### 2. Multi-Channel Webhook Triggers (Issue #27)
+- Updated `run_sync_job_background` within [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to send HTTP POST requests:
+  - **Slack**: Dispatches rich markdown text alerting that a job failed, referencing the sync job ID, error name, and diagnostic log details.
+  - **Discord**: Dispatches a colored embed object targeting Discord webhook formatting rules, complete with error trace and log snippets.
+- Wrapped each dispatcher call in its own try-except handler to ensure that network errors or timeout outages do not prevent job finalization or mask database sync logs.
 
-### 3. Failure Email Alert Dispatching (Issue #27)
-- Updated `run_sync_job_background` inside [views.py](file:///h:/My%20Drive/Toddlecross/toddlecross/views.py) to dispatch an administrative email alert immediately if a sync job fails.
-- The warning email contains the job ID, error traceback string, and full execution log contents.
-- Wrapped the mail trigger in a try-except block to ensure any mail server issues are caught gracefully and recorded without hiding the original database execution results.
+### 3. Unit Tests (Issue #27)
+- Appended unit test methods to class `EdgeCaseIntegrationTests` in [tests.py](file:///h:/My%20Drive/Toddlecross/toddlecross/tests.py):
+  - `test_run_sync_command_failure_dispatches_webhooks`: Verifies mock POST payloads are sent to Slack and Discord with the correct content structures.
+  - `test_run_sync_command_webhooks_graceful_on_timeout`: Verifies that request connection timeouts are caught safely, logging a warning record inside the `SyncJob` instead of raising uncaught runtime errors.
+- Adjusted mock target URLs to generic `example.com` values to prevent triggering GitHub push protection scanning rules.
 
 ---
 
@@ -24,12 +25,12 @@ This walkthrough details the addition of a custom management command for cron ex
 
 ### Local Unit Tests & Coverage Check
 We ran the unit tests under coverage locally:
-- **Test Executions**: All **29 tests** passed successfully:
+- **Test Executions**: All **31 tests** passed successfully:
   ```cmd
-  Ran 29 tests in 8.389s
+  Ran 31 tests in 9.206s
   OK
   ```
-- **Coverage Metrics**: Total application coverage measured at **85%**, with the new `run_sync.py` file reaching **100%** coverage:
+- **Coverage Metrics**: Total application coverage measured at **86%**:
   ```cmd
   Name                                          Stmts   Miss  Cover
   ---------------------------------------------------------------------------
@@ -41,12 +42,12 @@ We ran the unit tests under coverage locally:
   toddlecross\management\commands\run_sync.py      11      0   100%
   toddlecross\models.py                            15      1    93%
   toddlecross\urls.py                               5      0   100%
-  toddlecross\views.py                             85      9    89%
+  toddlecross\views.py                            102      9    91%
   ---------------------------------------------------------------------------
-  TOTAL                                           331     49    85%
+  TOTAL                                           348     49    86%
   ```
 
 ### GitHub Actions CI/CD Verification
 The updated test suite ran and passed successfully on GitHub:
-- **Action Run URL**: [Run 28258671685](https://github.com/bernie-nyc/toddlecross/actions/runs/28258671685)
-- **Job Outcome**: The `test` job passed successfully in `28s`.
+- **Action Run URL**: [Run 28273746676](https://github.com/bernie-nyc/toddlecross/actions/runs/28273746676)
+- **Job Outcome**: The `test` job passed successfully in `23s`.

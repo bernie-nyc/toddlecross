@@ -1,7 +1,6 @@
-# Task List - Batch 8: Automated Scheduling & Failure Alerts
+# Task List - Batch 9: Multi-Channel Alerts
 
-- [x] Configure SMTP email settings inside `config/settings.py`
-- [x] Implement `run_sync` custom Django management command in `toddlecross/management/commands/run_sync.py`
-- [x] Implement administrative failure email dispatching in `run_sync_job_background` inside `toddlecross/views.py`
-- [x] Implement and verify unit tests for management commands and failure email triggers
+- [x] Configure `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` inside `config/settings.py`
+- [x] Implement Slack and Discord alert triggers in `run_sync_job_background` inside `toddlecross/views.py`
+- [x] Implement unit tests verifying webhook POST requests on sync failure
 - [x] Verify test suite and local/remote CI pipelines pass successfully
